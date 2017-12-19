@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "declaration": true,
+        "moduleResolution": "node",
+        "declarationDir": "./dist",
+        "experimentalDecorators": true,
+        "typeRoots": [
+            "node_modules/@types/"
+        ],
+        "types": [
+            "node",
+            "mocha",
+            "chai",
+            "sinon-chai",
+            "karma-chai-sinon",
+            "sinon"
+        ]
+    },
+    "awesomeTypescriptLoaderOptions": {
+        "useBabel": true
+    },
+    "exclude": [
+        "node_modules",
+        "demo",
+        "dist"
+    ]
+}
