@@ -81,17 +81,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 Object.defineProperty(exports, "__esModule", {
-    value: true
+  value: true
 });
-exports.Init = undefined;
+exports.DomFloater = undefined;
 
 __webpack_require__(1);
 
-var _myModule = __webpack_require__(6);
+var _floater = __webpack_require__(7);
 
-var Init = exports.Init = function Init() {
-    return new _myModule.MyModule().Init();
-};
+var domFloater = _interopRequireWildcard(_floater);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+var DomFloater = exports.DomFloater = domFloater;
 
 /***/ }),
 /* 1 */
@@ -133,7 +135,7 @@ exports = module.exports = __webpack_require__(3)(undefined);
 
 
 // module
-exports.push([module.i, ":root {\r\n\r\n}", ""]);
+exports.push([module.i, ":root {\n\n}", ""]);
 
 // exports
 
@@ -675,7 +677,8 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 6 */
+/* 6 */,
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -687,22 +690,314 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _masker = __webpack_require__(12);
+
+var _constants = __webpack_require__(11);
+
+__webpack_require__(9);
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var MyModule = exports.MyModule = function () {
-    function MyModule() {
-        _classCallCheck(this, MyModule);
-    }
+/**
+ * A floating element that takes any content and intelligently positions as per configuration or to a given target.
+ * @constructor
+ */
+var Floater = function () {
+    function Floater(child, fixedDimensions) {
+        _classCallCheck(this, Floater);
 
-    _createClass(MyModule, [{
-        key: "Init",
-        value: function Init() {
-            var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        this.destroyBoundWithThis = this.destroy.bind(this);
+        this.modalBackground = new _masker.Masker();
+        var tempElement = document.createElement('DIV');
+        tempElement.innerHTML = '<article class=\'dom-floater-base\' data-is-initialising=\'true\'>\n        <a class=\'close\'><!--&#x274c-->&#x2716</a>\n          <div class=\'childContainer\'></div>\n       </article>';
+        this.hostElement = tempElement.firstChild;
+        this.hostElement.querySelector('.childContainer').appendChild(child);
+        if (fixedDimensions) {
+            this.hostElement.style.width = fixedDimensions.width + 'px';
+            this.hostElement.style.height = fixedDimensions.height + 'px';
+        }
+    }
+    /**
+     * Shows
+     * @param {Element} child we need to keep the reference to keep custom functionality in the child
+     */
+
+
+    _createClass(Floater, [{
+        key: 'init',
+        value: function init(parentElement) {
+            var _this = this;
+
+            document.body.appendChild(this.hostElement);
+            // let currentWidth = window.getComputedStyle(document.querySelector('p'))
+            this.modalBackground.init();
+            return new Promise(function (resolve, reject) {
+                // we need to set this in a timeout in order to trigger the css transition
+                setTimeout(function () {
+                    _this.hostElement.dataset['isInitialising'] = 'false';
+                });
+                // when the popup is has finished moving via the css transition resolve the promise to tell the callee
+                setTimeout(function () {
+                    // todo use dynamic width for better centering
+                    // let currentWidth = window.getComputedStyle(document.querySelector('p')) }, 50)
+                    _this.addListeners();
+                    resolve();
+                }, _constants.CONSTANTS.TRANSITION_TIMES);
+            });
+        }
+    }, {
+        key: 'addListeners',
+        value: function addListeners() {
+            var closeElement = this.hostElement.querySelector('a');
+            closeElement.addEventListener('click', this.destroyBoundWithThis);
+            this.hostElement.classList.remove('offscreen');
+            document.addEventListener('keyup', function (event) {
+                if (event.keyCode === _constants.CONSTANTS.COMMON_KEY_CODES.ESC) {
+                    this.destroyBoundWithThis();
+                }
+            }.bind(this));
+            this.hostElement.addEventListener('submit', function (event) {
+                this.destroyBoundWithThis();
+                event.preventDefault();
+            }.bind(this));
+            // handle the first child submit button click, close popup by default
+            // this is a convention that gets popup to behave in sensible way
+            var submitBtn = this.hostElement.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', this.destroyBoundWithThis);
+            }
+        }
+    }, {
+        key: 'destroy',
+        value: function destroy() {
+            var _this2 = this;
+
+            // visual indicator for this element and delegate to the modal
+            this.hostElement.dataset['isDestructing'] = 'true';
+            this.modalBackground.destroy();
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    _this2.hostElement.parentElement.removeChild(_this2.hostElement);
+                    resolve();
+                }, _constants.CONSTANTS.TRANSITION_TIMES);
+            });
         }
     }]);
 
-    return MyModule;
+    return Floater;
 }();
+
+exports.default = Floater;
+
+/***/ }),
+/* 8 */,
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(10);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(4)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(3)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "", ""]);
+
+// exports
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var CONSTANTS = exports.CONSTANTS = {
+    COMMON_KEY_CODES: {
+        BACKSPACE: 8,
+        RETURN: 13,
+        ESC: 27,
+        SPACE: 32,
+        LEFT: 37,
+        UP: 38,
+        RIGHT: 39,
+        DOWN: 40,
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        a: 65,
+        b: 66,
+        F: 70,
+        k: 75,
+        m: 77,
+        WIN_or_CMD: 91 // to detect cmd on key up use this, on keydown you can use event.metaKey
+    },
+    KEYS: {
+        BACKSPACE: 8,
+        TAB: 9,
+        RETURN: 13,
+        ESC: 27,
+        SPACE: 32,
+        LEFT: 37,
+        UP: 38,
+        RIGHT: 39,
+        DOWN: 40,
+        DELETE: 46,
+        HOME: 36,
+        END: 35,
+        PAGEUP: 33,
+        PAGEDOWN: 34,
+        INSERT: 45,
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        A: 65,
+        L: 76,
+        P: 80,
+        Q: 81,
+        TILDA: 192
+    },
+    TRANSITION_TIMES: 300,
+    BREAKPOINTS: {
+        XS: 400,
+        SM: 680,
+        MD: 1024,
+        LG: 1200
+    }
+};
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.Masker = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _constants = __webpack_require__(11);
+
+__webpack_require__(13);
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Masker = exports.Masker = function () {
+    function Masker() {
+        _classCallCheck(this, Masker);
+
+        this.destroyBoundWithThis = this.destroy.bind(this);
+    }
+
+    _createClass(Masker, [{
+        key: 'init',
+        value: function init() {
+            var _this = this;
+
+            this.hostElement = document.createElement('DIV');
+            this.hostElement.className = 'dom-masker-base';
+            this.hostElement.dataset['isInitialising'] = 'true';
+            document.body.appendChild(this.hostElement);
+            setTimeout(function () {
+                _this.hostElement.dataset['isInitialising'] = 'false';
+            }, 0); // force re-paint
+        }
+    }, {
+        key: 'destroy',
+        value: function destroy() {
+            var _this2 = this;
+
+            this.hostElement.dataset['isDestructing'] = 'true';
+            setTimeout(function () {
+                _this2.hostElement.parentElement.removeChild(_this2.hostElement);
+            }, _constants.CONSTANTS.TRANSITION_TIMES);
+        }
+    }]);
+
+    return Masker;
+}();
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(14);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(4)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./masker.pcss", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./masker.pcss");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(3)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "", ""]);
+
+// exports
+
 
 /***/ })
 /******/ ]);

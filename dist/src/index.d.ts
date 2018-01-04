@@ -1,2 +1,3 @@
 import "./index.pcss";
-export declare const Init: () => void;
+import * as domFloater from "./components/floater";
+export declare const DomFloater: typeof domFloater;

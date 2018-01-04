@@ -1,4 +1,6 @@
-// import * as myModule from '../dist/dom-floater.js';
-// let test = myModule.Init();
-// console.log(test);
+// import * as DomFloater from '../dist/dom-floater.js';
+import  * as dF from '../src/index';
+let test = dF.DomFloater.default;
+debugger;
+console.log(test);
 
