@@ -1,14 +1,14 @@
-# js-umd-lib-boilerplate
-A javascript module/ plugin/ library/ component building boilerplate.
+# dom-floater
+A javascript module/ plugin/ library/ component for floating dom elements on a webpage.
 
 ## Installation
 ```
-npm install --save js-umd-lib-boilerplate
+npm install --save dom-floater
 ```
 
 Usage:
 ```js
-import * as myModule from '../dist/js-umd-lib-boilerplate';
+import * as myModule from '../dist/dom-floater';
 myModule.Init();
 ```
 

@@ -1,8 +1,8 @@
 {
-    "name": "js-umd-lib-boilerplate",
+    "name": "dom-floater",
     "version": "14.0.0",
     "description": "",
-    "main": "dist/js-umd-lib-boilerplate.js",
+    "main": "dist/dom-floater.js",
     "types": "dist/index.d.ts",
     "files": [
         "dist"

@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["JsUmdLibBoilerplate"] = factory();
+		exports["DomFloater"] = factory();
 	else
-		root["JsUmdLibBoilerplate"] = factory();
+		root["DomFloater"] = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -707,4 +707,4 @@ var MyModule = exports.MyModule = function () {
 /***/ })
 /******/ ]);
 });
-//# sourceMappingURL=js-umd-lib-boilerplate.js.map
+//# sourceMappingURL=dom-floater.js.map
