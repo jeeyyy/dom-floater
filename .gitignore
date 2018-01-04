@@ -4,3 +4,4 @@ node_modules
 .tscache
 .sass-cache
 .idea
+sandbox/dist
