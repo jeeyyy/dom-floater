@@ -5,12 +5,7 @@ import { setTimeout } from 'timers';
 const Floater = dF.DomFloater.default;
 
 const showModal = () => {
-    const config: IFloater.Configuration = {
-        type: IFloater.Type.MODAL,
-        contentElement: `<div>Some Modal Content.</div>`
-    };
-    const floater = new Floater(config);
-    floater.show();
+
     // setTimeout(() =>  {
     //     floater.destroy();
     // }, 500);
@@ -25,9 +20,16 @@ const showToast = () => {
     floater.show();
 };
 
-document.getElementById(`createModal`).addEventListener('click', () => {
-    showModal();
-});
+document
+    .getElementById(`createModal`)
+    .addEventListener('click', () => {
+        const config: IFloater.Configuration = {
+            type: IFloater.Type.MODAL,
+            contentElement: `<div>Some Modal Content.</div>`
+        };
+        const floater = new Floater(config);
+        floater.show();
+    });
 
 document.getElementById(`createToast`).addEventListener('click', () => {
     showToast();
