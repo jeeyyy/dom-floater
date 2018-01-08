@@ -3,88 +3,49 @@ import { CONSTANTS } from './../constants';
 
 import './floater.pcss';
 import { IFloater } from '../interfaces';
+import { setTimeout } from 'timers';
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
  * @constructor
  */
-export default class Floater implements IFloater.BaseComponent {
+export default class Floater implements IFloater.Component {
 
+  hostElement: HTMLElement;
   destroyBoundWithThis = this.destroy.bind(this);
   modalBackground = new Masker();
-  hostElement: HTMLElement;
 
-  constructor(
-    child: HTMLElement,
-    fixedDimensions?: IFloater.Dimensions) {
-    const tempElement: HTMLElement = document.createElement('DIV');
 
-    tempElement.innerHTML =
-      `<article class='dom-floater-base' data-is-initialising='true'>
-        <a class='close'><!--&#x274c-->&#x2716</a>
-          <div class='childContainer'></div>
-       </article>`;
-
-    this.hostElement = tempElement.firstChild as HTMLElement;
-
-    this.hostElement.querySelector('.childContainer').appendChild(child);
-
-    if (fixedDimensions) {
-      this.hostElement.style.width = `${fixedDimensions.width}px`
-      this.hostElement.style.height = `${fixedDimensions.height}px`
+  constructor(configuration: IFloater.Configuration) {
+    this.hostElement = document.createElement(`DIV`);
+    this.hostElement.innerHTML = `
+    <article class='dom-floater-base' data-is-initialising='true'>
+    </article>
+    `;
+    if (configuration.contentElement) {
+      const contentContainer = document.createElement(`DIV`);
+      contentContainer.innerHTML = configuration.contentElement;
+      this.hostElement.firstElementChild.appendChild(contentContainer);
     }
-
+    if (configuration.dimensions) {
+      this.hostElement.style.width = `${configuration.dimensions.width}px`
+      this.hostElement.style.height = `${configuration.dimensions.height}px`
+    }
   }
 
-  /**
-   * Shows
-   * @param {Element} child we need to keep the reference to keep custom functionality in the child
-   */
-  init(parentElement?: HTMLElement): Promise<void> {
-    document.body.appendChild(this.hostElement)
-    // let currentWidth = window.getComputedStyle(document.querySelector('p'))
-
-    this.modalBackground.init()
-
+  show(): Promise<void> {
+    document.body.appendChild(this.hostElement);
+    this.modalBackground.init();
     return new Promise((resolve, reject) => {
-      // we need to set this in a timeout in order to trigger the css transition
+      setTimeout(() => { // the time out waits for the css kicks in.
+        this.hostElement.dataset[`isInitialising`] = `false`;
+      }, 0);
+
       setTimeout(() => {
-        this.hostElement.dataset['isInitialising'] = 'false';
-      });
-      // when the popup is has finished moving via the css transition resolve the promise to tell the callee
-      setTimeout(() => {
-        // todo use dynamic width for better centering
-        // let currentWidth = window.getComputedStyle(document.querySelector('p')) }, 50)
         this.addListeners();
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
-    })
-  }
-
-  addListeners() {
-
-    const closeElement = this.hostElement.querySelector('a');
-
-    closeElement.addEventListener('click', this.destroyBoundWithThis);
-    this.hostElement.classList.remove('offscreen');
-
-    document.addEventListener('keyup', function (event) {
-      if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
-        this.destroyBoundWithThis();
-      }
-    }.bind(this));
-
-    this.hostElement.addEventListener('submit', function (event) {
-      this.destroyBoundWithThis();
-      event.preventDefault();
-    }.bind(this));
-
-    // handle the first child submit button click, close popup by default
-    // this is a convention that gets popup to behave in sensible way
-    const submitBtn = this.hostElement.querySelector('button[type="submit"]')
-    if (submitBtn) {
-      submitBtn.addEventListener('click', this.destroyBoundWithThis)
-    }
+    });
   }
 
   destroy(): Promise<any> {
@@ -99,4 +60,15 @@ export default class Floater implements IFloater.BaseComponent {
       }, CONSTANTS.TRANSITION_TIMES);
     })
   }
+
+  private addListeners() {
+
+    // document.addEventListener('keyup', function (event) {
+    //   if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
+    //     this.destroyBoundWithThis();
+    //   }
+    // }.bind(this));
+
+  }
+
 }

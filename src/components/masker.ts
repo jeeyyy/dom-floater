@@ -1,6 +1,6 @@
 import { CONSTANTS } from './../constants';
 
-import './masker.pcss'
+import './masker.pcss';
 
 export class Masker {
 
@@ -24,7 +24,6 @@ export class Masker {
 
     destroy() {
         this.hostElement.dataset['isDestructing'] = 'true';
-
         setTimeout(() => {
             this.hostElement.parentElement.removeChild(this.hostElement)
         }, CONSTANTS.TRANSITION_TIMES);
