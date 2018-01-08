@@ -1,4 +1,3 @@
-import { Masker } from './masker';
 import './floater.pcss';
 import { IFloater } from '../interfaces';
 /**
@@ -8,7 +7,7 @@ import { IFloater } from '../interfaces';
 export default class Floater implements IFloater.Component {
     hostElement: HTMLElement;
     destroyBoundWithThis: any;
-    modalBackground: Masker;
+    configuration: IFloater.Configuration;
     constructor(configuration: IFloater.Configuration);
     show(): Promise<void>;
     destroy(): Promise<any>;

@@ -2,21 +2,17 @@ import { CONSTANTS } from './../constants';
 
 import './masker.pcss';
 
-export class Masker {
+class Masker {
 
-    private destroyBoundWithThis = this.destroy.bind(this);
     private hostElement: HTMLElement;
 
     constructor() { }
 
     init() {
-
         this.hostElement = document.createElement('DIV');
         this.hostElement.className = `dom-masker-base`;
         this.hostElement.dataset['isInitialising'] = 'true';
-
-        document.body.appendChild(this.hostElement)
-
+        document.body.appendChild(this.hostElement);
         setTimeout(() => {
             this.hostElement.dataset['isInitialising'] = 'false';
         }, 0); // force re-paint
@@ -29,3 +25,5 @@ export class Masker {
         }, CONSTANTS.TRANSITION_TIMES);
     }
 }
+
+export const masker = new Masker();

@@ -19,11 +19,30 @@
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
                 font-size: 11px;
             }
+            
+            .panel {
+                position: fixed;
+                z-index: 999999;
+                padding: 10px;
+                background: white;
+            }
+            
+            button {
+                margin: 5px;
+            }
         </style>
 
     </head>
 
     <body>
+        <div class="panel">
+            <button type='button'
+                id='createModal'>Create Modal</button>
+            <button type='button'
+                id='createToast'>Create Toast</button>
+            <button type='button'
+                id='createPopup'>Create Popup</button>
+        </div>
     </body>
 
 </html>

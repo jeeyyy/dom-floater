@@ -11,11 +11,16 @@ export namespace IFloater {
         height: number;
     }
 
+    export interface BaseElement {
+        
+    }
 
     export interface Configuration {
         type: Type,
         contentElement: HTMLElement | any;
         dimensions?: Dimensions;
+        // internally extended properties
+        guid?: string;
     }
 
 
@@ -27,5 +32,5 @@ export namespace IFloater {
         // addListeners();
     }
 
-    
+
 }
