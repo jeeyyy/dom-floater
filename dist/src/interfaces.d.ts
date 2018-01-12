@@ -1,4 +1,7 @@
 export declare namespace IFloater {
+    enum Event {
+        CLOSED = "CLOSED",
+    }
     enum Type {
         MODAL = "MODAL",
         POPUP = "POPUP",

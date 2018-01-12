@@ -13,8 +13,10 @@ import { masker } from './masker';
  */
 export default class Floater implements IFloater.Component {
 
-  hostElement: HTMLElement;
-  destroyBoundWithThis = this.destroy.bind(this);
+  private _hostElement: HTMLElement;
+  private _destroyBoundWithThis = this.destroy.bind(this);
+  private _callbacks = {}; // dynamically constructed object
+
   configuration: IFloater.Configuration;
 
   constructor(configuration: IFloater.Configuration) {
@@ -22,28 +24,28 @@ export default class Floater implements IFloater.Component {
     // extend config object with uid
     configuration.guid = nanoid(10);
     this.configuration = configuration;
-    // manage floater instance
-    floaterInstances.add(this.configuration);
+    
 
     // create DOM
-    this.hostElement = document.createElement('ARTICLE');
-    this.hostElement.className = `dom-floater-base`;
-    this.hostElement.dataset['isInitialising'] = 'true';
+    this._hostElement = document.createElement('ARTICLE');
+    this._hostElement.className = `dom-floater-base`;
+    this._hostElement.dataset['isInitialising'] = 'true';
 
     if (configuration.contentElement) {
-      this.hostElement.innerHTML = configuration.contentElement;
+      this._hostElement.innerHTML = configuration.contentElement;
     }
 
     if (configuration.dimensions) {
-      this.hostElement.style.width = `${configuration.dimensions.width}px`
-      this.hostElement.style.height = `${configuration.dimensions.height}px`
+      this._hostElement.style.width = `${configuration.dimensions.width}px`
+      this._hostElement.style.height = `${configuration.dimensions.height}px`
     }
 
+    // manage floater instance
+    floaterInstances.add(this);
   }
 
   show(): Promise<void> {
-
-    document.body.appendChild(this.hostElement);
+    document.body.appendChild(this._hostElement);
 
     // only init a mask element if this is the first modal that is shown
     if (this.configuration.type === IFloater.Type.MODAL) {
@@ -55,11 +57,9 @@ export default class Floater implements IFloater.Component {
 
     return new Promise((resolve, reject) => {
       setTimeout(() => { // the time out waits for the css kicks in.
-        this.hostElement.dataset[`isInitialising`] = `false`;
+        this._hostElement.dataset[`isInitialising`] = `false`;
       }, 0);
-
       setTimeout(() => {
-        this.addListeners();
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
     });
@@ -68,7 +68,7 @@ export default class Floater implements IFloater.Component {
 
   destroy(): Promise<any> {
     // visual indicator for this element and delegate to the modal
-    this.hostElement.dataset['isDestructing'] = 'true';
+    this._hostElement.dataset['isDestructing'] = 'true';
 
     // only init a mask element if this is the first modal that is shown
     if (this.configuration.type === IFloater.Type.MODAL) {
@@ -81,20 +81,12 @@ export default class Floater implements IFloater.Component {
     return new Promise((resolve) => {
       setTimeout(() => {
         // remove floater instance management
-        floaterInstances.remove(this.configuration);
+        floaterInstances.destroy(this);
         // remove from DOM
-        this.hostElement.parentElement.removeChild(this.hostElement)
+        this._hostElement.parentElement.removeChild(this._hostElement)
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
     })
-  }
-
-  private addListeners() {
-    // document.addEventListener('keyup', function (event) {
-    //   if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
-    //     this.destroyBoundWithThis();
-    //   }
-    // }.bind(this));
   }
 
 }

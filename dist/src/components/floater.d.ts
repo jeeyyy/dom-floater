@@ -5,11 +5,11 @@ import { IFloater } from '../interfaces';
  * @constructor
  */
 export default class Floater implements IFloater.Component {
-    hostElement: HTMLElement;
-    destroyBoundWithThis: any;
+    private _hostElement;
+    private _destroyBoundWithThis;
+    private _callbacks;
     configuration: IFloater.Configuration;
     constructor(configuration: IFloater.Configuration);
     show(): Promise<void>;
     destroy(): Promise<any>;
-    private addListeners();
 }

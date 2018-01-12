@@ -1,5 +1,9 @@
 export namespace IFloater {
 
+    export enum Event {
+        CLOSED = 'CLOSED'
+    }
+
     export enum Type {
         MODAL = 'MODAL',
         POPUP = 'POPUP',
@@ -12,7 +16,7 @@ export namespace IFloater {
     }
 
     export interface BaseElement {
-        
+
     }
 
     export interface Configuration {

@@ -588,7 +588,7 @@ var CONSTANTS = exports.CONSTANTS = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.DomFloater = undefined;
+exports.DomFloaterManager = exports.DomFloater = undefined;
 
 __webpack_require__(4);
 
@@ -596,9 +596,12 @@ var _floater = __webpack_require__(7);
 
 var domFloater = _interopRequireWildcard(_floater);
 
+var _floaterManager = __webpack_require__(17);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 var DomFloater = exports.DomFloater = domFloater;
+var DomFloaterManager = exports.DomFloaterManager = _floaterManager.floaterManager;
 
 /***/ }),
 /* 4 */
@@ -753,19 +756,19 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _nanoid = __webpack_require__(17);
+var _nanoid = __webpack_require__(8);
 
 var nanoid = _interopRequireWildcard(_nanoid);
 
 var _constants = __webpack_require__(2);
 
-__webpack_require__(11);
+__webpack_require__(10);
 
-var _interfaces = __webpack_require__(20);
+var _interfaces = __webpack_require__(12);
 
-var _floaterInstances = __webpack_require__(21);
+var _floaterInstances = __webpack_require__(13);
 
-var _masker = __webpack_require__(8);
+var _masker = __webpack_require__(14);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -779,23 +782,24 @@ var Floater = function () {
     function Floater(configuration) {
         _classCallCheck(this, Floater);
 
-        this.destroyBoundWithThis = this.destroy.bind(this);
+        this._destroyBoundWithThis = this.destroy.bind(this);
+        this._callbacks = {}; // dynamically constructed object
         // extend config object with uid
         configuration.guid = nanoid(10);
         this.configuration = configuration;
-        // manage floater instance
-        _floaterInstances.floaterInstances.add(this.configuration);
         // create DOM
-        this.hostElement = document.createElement('ARTICLE');
-        this.hostElement.className = 'dom-floater-base';
-        this.hostElement.dataset['isInitialising'] = 'true';
+        this._hostElement = document.createElement('ARTICLE');
+        this._hostElement.className = 'dom-floater-base';
+        this._hostElement.dataset['isInitialising'] = 'true';
         if (configuration.contentElement) {
-            this.hostElement.innerHTML = configuration.contentElement;
+            this._hostElement.innerHTML = configuration.contentElement;
         }
         if (configuration.dimensions) {
-            this.hostElement.style.width = configuration.dimensions.width + 'px';
-            this.hostElement.style.height = configuration.dimensions.height + 'px';
+            this._hostElement.style.width = configuration.dimensions.width + 'px';
+            this._hostElement.style.height = configuration.dimensions.height + 'px';
         }
+        // manage floater instance
+        _floaterInstances.floaterInstances.add(this);
     }
 
     _createClass(Floater, [{
@@ -803,7 +807,7 @@ var Floater = function () {
         value: function show() {
             var _this = this;
 
-            document.body.appendChild(this.hostElement);
+            document.body.appendChild(this._hostElement);
             // only init a mask element if this is the first modal that is shown
             if (this.configuration.type === _interfaces.IFloater.Type.MODAL) {
                 var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
@@ -813,10 +817,9 @@ var Floater = function () {
             }
             return new Promise(function (resolve, reject) {
                 setTimeout(function () {
-                    _this.hostElement.dataset['isInitialising'] = 'false';
+                    _this._hostElement.dataset['isInitialising'] = 'false';
                 }, 0);
                 setTimeout(function () {
-                    _this.addListeners();
                     resolve();
                 }, _constants.CONSTANTS.TRANSITION_TIMES);
             });
@@ -827,7 +830,7 @@ var Floater = function () {
             var _this2 = this;
 
             // visual indicator for this element and delegate to the modal
-            this.hostElement.dataset['isDestructing'] = 'true';
+            this._hostElement.dataset['isDestructing'] = 'true';
             // only init a mask element if this is the first modal that is shown
             if (this.configuration.type === _interfaces.IFloater.Type.MODAL) {
                 var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
@@ -838,21 +841,12 @@ var Floater = function () {
             return new Promise(function (resolve) {
                 setTimeout(function () {
                     // remove floater instance management
-                    _floaterInstances.floaterInstances.remove(_this2.configuration);
+                    _floaterInstances.floaterInstances.destroy(_this2);
                     // remove from DOM
-                    _this2.hostElement.parentElement.removeChild(_this2.hostElement);
+                    _this2._hostElement.parentElement.removeChild(_this2._hostElement);
                     resolve();
                 }, _constants.CONSTANTS.TRANSITION_TIMES);
             });
-        }
-    }, {
-        key: 'addListeners',
-        value: function addListeners() {
-            // document.addEventListener('keyup', function (event) {
-            //   if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
-            //     this.destroyBoundWithThis();
-            //   }
-            // }.bind(this));
         }
     }]);
 
@@ -863,6 +857,183 @@ exports.default = Floater;
 
 /***/ }),
 /* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var random = __webpack_require__(9)
+
+var url = '_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+/**
+ * Generate secure URL-friendly unique ID.
+ *
+ * By default, ID will have 21 symbols to have a collision probability similar
+ * to UUID v4.
+ *
+ * @param {number} [size=21] The number of symbols in ID.
+ *
+ * @return {string} Random string.
+ *
+ * @example
+ * var nanoid = require('nanoid')
+ * model.id = nanoid() //=> "Uakgb_J5m9g~0JDMbcJqL"
+ *
+ * @name nanoid
+ */
+module.exports = function (size) {
+  size = size || 21
+  var id = ''
+  var bytes = random(size)
+  while (0 < size--) {
+    id += url[bytes[size] & 63]
+  }
+  return id
+}
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports) {
+
+var crypto = window.crypto || window.msCrypto
+
+module.exports = function (bytes) {
+  return crypto.getRandomValues(new Uint8Array(bytes))
+}
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(11);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(1)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(0)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  position: fixed;\r\n  transition: all 300ms ease;\r\n  box-sizing: border-box;\r\n  color: #000000;\r\n  background-color: #ffffff;\r\n  border: 1px solid #000000;  \r\n  left: 50%;\r\n  top: 50%;\r\n  -webkit-transform: translate(-50%, -50%);\r\n          transform: translate(-50%, -50%);\r\n}", ""]);
+
+// exports
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var IFloater = exports.IFloater = undefined;
+(function (IFloater) {
+    var Event = void 0;
+    (function (Event) {
+        Event["CLOSED"] = "CLOSED";
+    })(Event = IFloater.Event || (IFloater.Event = {}));
+    var Type = void 0;
+    (function (Type) {
+        Type["MODAL"] = "MODAL";
+        Type["POPUP"] = "POPUP";
+        Type["TOAST"] = "TOAST";
+    })(Type = IFloater.Type || (IFloater.Type = {}));
+})(IFloater || (exports.IFloater = IFloater = {}));
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var FloaterInstances = exports.FloaterInstances = function () {
+    function FloaterInstances() {
+        _classCallCheck(this, FloaterInstances);
+
+        this._instances = {}; // dynamically crated objects - key value pairs
+    }
+
+    _createClass(FloaterInstances, [{
+        key: "add",
+        value: function add(floater) {
+            this._instances[floater.configuration.guid] = floater;
+        }
+    }, {
+        key: "destroy",
+        value: function destroy(floater) {
+            var guid = floater.configuration.guid;
+            var floaterInstance = this._instances[guid];
+            if (floaterInstance) floaterInstance.destroy();
+            delete this._instances[guid];
+        }
+    }, {
+        key: "getInstanceById",
+        value: function getInstanceById(guid) {
+            return this._instances[guid];
+        }
+    }, {
+        key: "getInstancesOfType",
+        value: function getInstancesOfType(instanceType) {
+            var _this = this;
+
+            var instances = Object.keys(this._instances);
+            var result = [];
+            Object.keys(this._instances).forEach(function (instanceGuid) {
+                var instance = _this.getInstanceById(instanceGuid);
+                if (instance && instance.configuration.type === instanceType) {
+                    result.push(instance);
+                }
+            });
+            return result;
+        }
+    }]);
+
+    return FloaterInstances;
+}();
+
+var floaterInstances = exports.floaterInstances = new FloaterInstances();
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -877,7 +1048,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _constants = __webpack_require__(2);
 
-__webpack_require__(9);
+__webpack_require__(15);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -917,13 +1088,13 @@ var Masker = function () {
 var masker = exports.masker = new Masker();
 
 /***/ }),
-/* 9 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(10);
+var content = __webpack_require__(16);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -948,7 +1119,7 @@ if(false) {
 }
 
 /***/ }),
-/* 10 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -962,186 +1133,40 @@ exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bot
 
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(12);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js??ref--1-1!../../node_modules/postcss-loader/lib/index.js!./floater.pcss");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  position: fixed;\r\n  transition: all 300ms ease;\r\n  box-sizing: border-box;\r\n  color: #000000;\r\n  background-color: #ffffff;\r\n  border: 1px solid #000000;  \r\n  left: 50%;\r\n  top: 50%;\r\n  -webkit-transform: translate(-50%, -50%);\r\n          transform: translate(-50%, -50%);\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 13 */,
-/* 14 */,
-/* 15 */,
-/* 16 */,
 /* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var random = __webpack_require__(18)
-
-var url = '_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-/**
- * Generate secure URL-friendly unique ID.
- *
- * By default, ID will have 21 symbols to have a collision probability similar
- * to UUID v4.
- *
- * @param {number} [size=21] The number of symbols in ID.
- *
- * @return {string} Random string.
- *
- * @example
- * var nanoid = require('nanoid')
- * model.id = nanoid() //=> "Uakgb_J5m9g~0JDMbcJqL"
- *
- * @name nanoid
- */
-module.exports = function (size) {
-  size = size || 21
-  var id = ''
-  var bytes = random(size)
-  while (0 < size--) {
-    id += url[bytes[size] & 63]
-  }
-  return id
-}
-
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports) {
-
-var crypto = window.crypto || window.msCrypto
-
-module.exports = function (bytes) {
-  return crypto.getRandomValues(new Uint8Array(bytes))
-}
-
-
-/***/ }),
-/* 19 */,
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
 "use strict";
 
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var IFloater = exports.IFloater = undefined;
-(function (IFloater) {
-    var Type = void 0;
-    (function (Type) {
-        Type["MODAL"] = "MODAL";
-        Type["POPUP"] = "POPUP";
-        Type["TOAST"] = "TOAST";
-    })(Type = IFloater.Type || (IFloater.Type = {}));
-})(IFloater || (exports.IFloater = IFloater = {}));
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
+exports.floaterManager = exports.FloaterManager = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _floaterInstances = __webpack_require__(13);
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var FloaterInstances = exports.FloaterInstances = function () {
-    function FloaterInstances() {
-        _classCallCheck(this, FloaterInstances);
-
-        this._instances = {}; // dynamically crated objects - key value pairs
+// wrapper class to encapsulate floater instances
+var FloaterManager = exports.FloaterManager = function () {
+    function FloaterManager() {
+        _classCallCheck(this, FloaterManager);
     }
 
-    _createClass(FloaterInstances, [{
-        key: "add",
-        value: function add(instance) {
-            this._instances[instance.guid] = instance;
-        }
-    }, {
-        key: "remove",
-        value: function remove(instance) {
-            delete this._instances[instance.guid];
-        }
-    }, {
-        key: "destroyAll",
-        value: function destroyAll() {
-            this._instances = null;
-        }
-    }, {
-        key: "getInstanceById",
-        value: function getInstanceById(guid) {
-            return this._instances[guid];
-        }
-    }, {
-        key: "getInstancesOfType",
-        value: function getInstancesOfType(instanceType) {
-            var _this = this;
-
-            var instanceIds = Object.keys(this._instances);
-            var result = [];
-            if (instanceIds && instanceIds.length > 0) {
-                instanceIds.forEach(function (instanceGuid) {
-                    var instance = _this.getInstanceById(instanceGuid);
-                    if (instance && instance.type === instanceType) {
-                        result.push(instance);
-                    }
-                });
-            }
-            return result;
+    _createClass(FloaterManager, [{
+        key: 'destroy',
+        value: function destroy(instance) {
+            _floaterInstances.floaterInstances.destroy(instance);
         }
     }]);
 
-    return FloaterInstances;
+    return FloaterManager;
 }();
 
-var floaterInstances = exports.floaterInstances = new FloaterInstances();
+var floaterManager = exports.floaterManager = new FloaterManager();
 
 /***/ })
 /******/ ]);

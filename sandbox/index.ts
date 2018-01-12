@@ -1,38 +1,49 @@
 // import * as DomFloater from '../dist/dom-floater.js';
 import * as dF from '../src/index';
 import { IFloater } from '../src/interfaces';
-import { setTimeout } from 'timers';
+
 const Floater = dF.DomFloater.default;
+const FloaterManager = dF.DomFloaterManager;
 
-const showModal = () => {
+const fakeClose = (floater) => {
+    setTimeout(() => {
+        let closeButton = document.getElementById('close-button');
+        if(closeButton) {
+            closeButton.addEventListener('click', () => {
+                FloaterManager.destroy(floater);
+            });
+        }
+    }, 200);
+}
 
-    // setTimeout(() =>  {
-    //     floater.destroy();
-    // }, 500);
-};
+const createFloater = () => {
 
-const showToast = () => {
     const config: IFloater.Configuration = {
-        type: IFloater.Type.TOAST,
-        contentElement: `<div>Some Toast Content</div>`
+        type: IFloater.Type.MODAL,
+        contentElement: `
+        <div>
+            Some Modal Content.
+            <button 
+                type='button'
+                id='close-button'>
+                Close
+            </button>
+        </div>`
     };
-    const floater = new Floater(config);
+    const floater = new Floater(config);    
     floater.show();
-};
+    fakeClose(floater);
+    
+}
 
 document
     .getElementById(`createModal`)
     .addEventListener('click', () => {
-        const config: IFloater.Configuration = {
-            type: IFloater.Type.MODAL,
-            contentElement: `<div>Some Modal Content.</div>`
-        };
-        const floater = new Floater(config);
-        floater.show();
+        createFloater();
     });
 
-document.getElementById(`createToast`).addEventListener('click', () => {
-    showToast();
-});
-
-// showModal();
+document
+    .getElementById(`createToast`)
+    .addEventListener('click', () => {
+        alert('NOT IMPLEMENTED');
+    });
