@@ -1,7 +1,7 @@
 import { CONSTANTS } from './../constants';
-import './masker.pcss';
+import './toaster-container.pcss';
 
-export class Masker {
+export class ToasterContainer {
 
     private _hostElement: HTMLElement;
 
@@ -9,17 +9,23 @@ export class Masker {
 
     init() {
         this._hostElement = document.createElement('DIV');
-        this._hostElement.className = `dom-masker-base`;
+        this._hostElement.className = `dom-toaster-container-base`;
         this._hostElement.dataset['isInitialising'] = 'true';
         document.body.appendChild(this._hostElement);
+
         setTimeout(() => {
             this._hostElement.dataset['isInitialising'] = 'false';
         }, 0); // force re-paint
     }
 
+    add(toastElement: HTMLElement) {
+        this._hostElement.appendChild(toastElement);
+    }
+
+    
+
     destroy() {
-        this._hostElement
-            .dataset['isDestructing'] = 'true';
+        this._hostElement.dataset['isDestructing'] = 'true';
         setTimeout(() => {
             this._hostElement
                 .parentElement
@@ -28,4 +34,4 @@ export class Masker {
     }
 }
 
-export const masker = new Masker();
+export const toasterContainer = new ToasterContainer();

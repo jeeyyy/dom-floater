@@ -1,5 +1,8 @@
 export const CONSTANTS = {
-
+    MESSAGES: {
+        ERROR_IN_CONFIGURATION_NO_TYPE: `Error in Floater Configuration. No Type provided`,
+        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: `Error in Floater Configuration. No Popup Target Element provided.`
+    },
     COMMON_KEY_CODES: {
         BACKSPACE: 8,
 

@@ -1,22 +1,27 @@
 export declare namespace IFloater {
-    enum Event {
-        CLOSED = "CLOSED",
-    }
     enum Type {
         MODAL = "MODAL",
         POPUP = "POPUP",
         TOAST = "TOAST",
     }
+    enum PopupPosition {
+        TOP = "TOP",
+        BOTTOM = "BOTTOM",
+        LEFT = "LEFT",
+        RIGHT = "RIGHT",
+        AUTO = "AUTO",
+    }
     interface Dimensions {
         width: number;
         height: number;
     }
-    interface BaseElement {
-    }
     interface Configuration {
         type: Type;
-        contentElement: HTMLElement | any;
+        contentElement: Element | any;
+        expiry?: number;
         dimensions?: Dimensions;
+        popupTargetElement?: Element;
+        popupPosition?: PopupPosition;
         guid?: string;
     }
     interface Component {

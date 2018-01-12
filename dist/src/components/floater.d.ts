@@ -12,4 +12,6 @@ export default class Floater implements IFloater.Component {
     constructor(configuration: IFloater.Configuration);
     show(): Promise<void>;
     destroy(): Promise<any>;
+    getContentElementWithSelector(selector: string): Element;
+    getFloaterElementFromChild(contentChildElement: Element): Element;
 }

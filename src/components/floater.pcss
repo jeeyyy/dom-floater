@@ -3,13 +3,25 @@
 
 .dom-floater-base {
   z-index: 1000;
-  position: fixed;
   transition: all 300ms ease;
   box-sizing: border-box;
-  color: var(--brush-black);
-  background-color: var(--brush-white);
-  border: 1px solid var(--brush-black);  
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  border: 1px solid;  
+  backface-visibility: hidden;
+  transform: translateZ(0) scale(1.0, 1.0);
+
+  &.MODAL {
+    position: fixed;    
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  &.TOAST {
+    position: relative;
+  }
+
+  &.POPUP {
+    position: fixed;
+    transform: translate(-100%, -100%);
+  }
 }

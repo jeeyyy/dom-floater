@@ -1,8 +1,8 @@
 import './masker.pcss';
 export declare class Masker {
-    private destroyBoundWithThis;
-    private hostElement;
+    private _hostElement;
     constructor();
     init(): void;
     destroy(): void;
 }
+export declare const masker: Masker;

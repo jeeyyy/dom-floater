@@ -1,11 +1,11 @@
 import * as nanoid from 'nanoid';
 import { CONSTANTS } from './../constants';
-
 import './floater.pcss';
 import { IFloater } from '../interfaces';
 import { floaterInstances } from './floater-instances';
-
 import { masker } from './masker';
+import { toasterContainer } from './toaster-container';
+import { translate3d } from '../util';
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -13,7 +13,8 @@ import { masker } from './masker';
  */
 export default class Floater implements IFloater.Component {
 
-  private _hostElement: HTMLElement;
+  private _hostElement: HTMLElement; // TODO: this needs to be private
+
   private _destroyBoundWithThis = this.destroy.bind(this);
   private _callbacks = {}; // dynamically constructed object
 
@@ -24,11 +25,11 @@ export default class Floater implements IFloater.Component {
     // extend config object with uid
     configuration.guid = nanoid(10);
     this.configuration = configuration;
-    
 
     // create DOM
     this._hostElement = document.createElement('ARTICLE');
-    this._hostElement.className = `dom-floater-base`;
+    this._hostElement.className = `dom-floater-base ${configuration.type}`;
+    this._hostElement.dataset['guid'] = configuration.guid;
     this._hostElement.dataset['isInitialising'] = 'true';
 
     if (configuration.contentElement) {
@@ -45,14 +46,46 @@ export default class Floater implements IFloater.Component {
   }
 
   show(): Promise<void> {
-    document.body.appendChild(this._hostElement);
 
-    // only init a mask element if this is the first modal that is shown
+    const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(this.configuration.type);
+    // HANDLE MODAL
     if (this.configuration.type === IFloater.Type.MODAL) {
-      const doesMaskAlreadyExist = floaterInstances.getInstancesOfType(IFloater.Type.MODAL);
-      if (doesMaskAlreadyExist.length <= 1) {
+      // only init a mask element if this is the first modal that is shown
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
         masker.init();
       }
+      // create Modal
+      document.body.appendChild(this._hostElement);
+    }
+    // HANDLE TOAST
+    else if (this.configuration.type === IFloater.Type.TOAST) {
+      // only init a toast container element if does not exist
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+        toasterContainer.init();
+      }
+      toasterContainer.add(this._hostElement);
+    }
+    // HANDLE POPUP
+    else if (this.configuration.type === IFloater.Type.POPUP) {
+      // a pop up already exists
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 1) {
+        //dispose old one
+        // ideal world there is going to be only one ever
+        getCurrentInstanceOfType.forEach((instance: Floater) => {
+          instance.destroy();
+        })
+      }
+      // create popup styles
+      if (this.configuration.popupTargetElement) {
+        document.body.appendChild(this._hostElement);
+        const rect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+        this._hostElement.setAttribute('style', translate3d(rect.right, rect.top, 0, CONSTANTS.TRANSITION_TIMES));
+      } else {
+        throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_TYPE);
+      }
+    }
+    else {
+      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
     }
 
     return new Promise((resolve, reject) => {
@@ -86,7 +119,22 @@ export default class Floater implements IFloater.Component {
         this._hostElement.parentElement.removeChild(this._hostElement)
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
-    })
+    });
+
+  }
+
+  getContentElementWithSelector(selector: string): Element {
+    return this._hostElement.getElementsByClassName(selector)[0];
+  }
+
+  getFloaterElementFromChild(contentChildElement: Element) {
+    while (contentChildElement.parentNode) {
+      contentChildElement = contentChildElement.parentNode as Element;
+      if (contentChildElement.classList.contains('dom-floater-base')) {
+        return contentChildElement;
+      }
+    }
+    return null;
   }
 
 }

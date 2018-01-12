@@ -1,13 +1,17 @@
 export namespace IFloater {
 
-    export enum Event {
-        CLOSED = 'CLOSED'
-    }
-
     export enum Type {
         MODAL = 'MODAL',
         POPUP = 'POPUP',
         TOAST = 'TOAST'
+    }
+
+    export enum PopupPosition {
+        TOP = 'TOP',
+        BOTTOM = 'BOTTOM',
+        LEFT = 'LEFT',
+        RIGHT = 'RIGHT',
+        AUTO = 'AUTO'
     }
 
     export interface Dimensions {
@@ -15,15 +19,19 @@ export namespace IFloater {
         height: number;
     }
 
-    export interface BaseElement {
-
-    }
-
     export interface Configuration {
         type: Type,
-        contentElement: HTMLElement | any;
+        contentElement: Element | any;
+
+        // OPTIONAL PROPERTIES - common to any type
+        expiry?: number; // milliseconds
         dimensions?: Dimensions;
-        // internally extended properties
+
+        // POPUP PROPERTIES
+        popupTargetElement?: Element;
+        popupPosition?: PopupPosition
+
+        // INTERNAL PROPERTIES
         guid?: string;
     }
 

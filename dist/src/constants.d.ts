@@ -1,4 +1,8 @@
 export declare const CONSTANTS: {
+    MESSAGES: {
+        ERROR_IN_CONFIGURATION_NO_TYPE: string;
+        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: string;
+    };
     COMMON_KEY_CODES: {
         BACKSPACE: number;
         RETURN: number;
