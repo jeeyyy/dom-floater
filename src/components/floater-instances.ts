@@ -3,7 +3,7 @@ import Floater from "./floater";
 
 export class FloaterInstances {
 
-    private _instances = {}; // dynamically crated objects - key value pairs
+    private _instances = {}; // dynamically created objects - key value pairs
 
     add(floater: Floater) {
         this._instances[floater.configuration.guid] = floater;

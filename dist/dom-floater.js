@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -202,7 +202,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(6);
+var	fixUrls = __webpack_require__(7);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -590,17 +590,81 @@ var CONSTANTS = exports.CONSTANTS = {
 
 
 Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var FloaterInstances = exports.FloaterInstances = function () {
+    function FloaterInstances() {
+        _classCallCheck(this, FloaterInstances);
+
+        this._instances = {}; // dynamically created objects - key value pairs
+    }
+
+    _createClass(FloaterInstances, [{
+        key: "add",
+        value: function add(floater) {
+            this._instances[floater.configuration.guid] = floater;
+            console.debug(this._instances);
+        }
+    }, {
+        key: "destroy",
+        value: function destroy(floater) {
+            var guid = floater.configuration.guid;
+            var floaterInstance = this._instances[guid];
+            if (floaterInstance) floaterInstance.destroy();
+            delete this._instances[guid];
+            console.debug(this._instances);
+        }
+    }, {
+        key: "getInstanceById",
+        value: function getInstanceById(guid) {
+            return this._instances[guid];
+        }
+    }, {
+        key: "getInstancesOfType",
+        value: function getInstancesOfType(instanceType) {
+            var _this = this;
+
+            var instances = Object.keys(this._instances);
+            var result = [];
+            Object.keys(this._instances).forEach(function (instanceGuid) {
+                var instance = _this.getInstanceById(instanceGuid);
+                if (instance && instance.configuration.type === instanceType) {
+                    result.push(instance);
+                }
+            });
+            return result;
+        }
+    }]);
+
+    return FloaterInstances;
+}();
+
+var floaterInstances = exports.floaterInstances = new FloaterInstances();
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.DomFloaterManager = exports.DomFloater = undefined;
 
-__webpack_require__(4);
+__webpack_require__(5);
 
-var _floater = __webpack_require__(7);
+var _floater = __webpack_require__(8);
 
 var domFloater = _interopRequireWildcard(_floater);
 
-var _floaterManager = __webpack_require__(17);
+var _floaterManager = __webpack_require__(21);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -608,13 +672,13 @@ var DomFloater = exports.DomFloater = domFloater;
 var DomFloaterManager = exports.DomFloaterManager = _floaterManager.floaterManager;
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(5);
+var content = __webpack_require__(6);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -639,7 +703,7 @@ if(false) {
 }
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -653,7 +717,7 @@ exports.push([module.i, "// Utility styles on attributes.\r\n[data-is-initialisi
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports) {
 
 
@@ -748,7 +812,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -760,23 +824,23 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _nanoid = __webpack_require__(8);
+var _nanoid = __webpack_require__(9);
 
 var nanoid = _interopRequireWildcard(_nanoid);
 
 var _constants = __webpack_require__(2);
 
-__webpack_require__(10);
+__webpack_require__(11);
 
-var _interfaces = __webpack_require__(12);
+var _interfaces = __webpack_require__(13);
 
-var _floaterInstances = __webpack_require__(13);
+var _floaterInstances = __webpack_require__(3);
 
 var _masker = __webpack_require__(14);
 
-var _toasterContainer = __webpack_require__(18);
+var _toasterContainer = __webpack_require__(17);
 
-var _util = __webpack_require__(21);
+var _util = __webpack_require__(20);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -831,22 +895,26 @@ var Floater = function () {
                     _toasterContainer.toasterContainer.init();
                 }
                 _toasterContainer.toasterContainer.add(this._hostElement);
-            } else if (this.configuration.type === _interfaces.IFloater.Type.POPUP) {
-                // a pop up already exists
-                if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 1) {
-                    //dispose old one
-                    // ideal world there is going to be only one ever
-                    getCurrentInstanceOfType.forEach(function (instance) {
-                        instance.destroy();
-                    });
+                if (this.configuration.expiry) {
+                    this.destructOnExpiry(this.configuration.expiry)();
                 }
-                // create popup styles
+            } else if (this.configuration.type === _interfaces.IFloater.Type.POPUP) {
+                // create new popup
                 if (this.configuration.popupTargetElement) {
                     document.body.appendChild(this._hostElement);
                     var rect = this.configuration.popupTargetElement.getBoundingClientRect();
-                    this._hostElement.setAttribute('style', (0, _util.translate3d)(rect.right, rect.top, 0, _constants.CONSTANTS.TRANSITION_TIMES));
+                    this._hostElement.setAttribute('style', (0, _util.positionFloater)(rect.right, rect.top));
                 } else {
                     throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_TYPE);
+                }
+                // and delete the previous one
+                if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
+                    //dispose old one
+                    getCurrentInstanceOfType.forEach(function (instance) {
+                        if (instance.configuration.guid !== _this.configuration.guid) {
+                            instance.destroy();
+                        }
+                    });
                 }
             } else {
                 throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
@@ -856,6 +924,10 @@ var Floater = function () {
                     _this._hostElement.dataset['isInitialising'] = 'false';
                 }, 0);
                 setTimeout(function () {
+                    if (_this.configuration.type === _interfaces.IFloater.Type.POPUP) {
+                        _this.destructOnEscape();
+                        _this.destructOnDocumentClick();
+                    }
                     resolve();
                 }, _constants.CONSTANTS.TRANSITION_TIMES);
             });
@@ -879,7 +951,9 @@ var Floater = function () {
                     // remove floater instance management
                     _floaterInstances.floaterInstances.destroy(_this2);
                     // remove from DOM
-                    _this2._hostElement.parentElement.removeChild(_this2._hostElement);
+                    if (_this2._hostElement.parentElement) {
+                        _this2._hostElement.parentElement.removeChild(_this2._hostElement);
+                    }
                     resolve();
                 }, _constants.CONSTANTS.TRANSITION_TIMES);
             });
@@ -894,11 +968,48 @@ var Floater = function () {
         value: function getFloaterElementFromChild(contentChildElement) {
             while (contentChildElement.parentNode) {
                 contentChildElement = contentChildElement.parentNode;
-                if (contentChildElement.classList.contains('dom-floater-base')) {
+                if (contentChildElement && contentChildElement.classList && contentChildElement.classList.length && contentChildElement.classList.contains('dom-floater-base')) {
                     return contentChildElement;
                 }
             }
             return null;
+        }
+    }, {
+        key: 'destructOnExpiry',
+        value: function destructOnExpiry(expiryDurtaion) {
+            var _this3 = this;
+
+            var timer = void 0;
+            return function () {
+                clearTimeout(timer); // be sure to clear if object exists.
+                timer = setTimeout(function () {
+                    _this3._destroyBoundWithThis();
+                    clearTimeout(timer);
+                }, 5000);
+            };
+        }
+    }, {
+        key: 'destructOnEscape',
+        value: function destructOnEscape() {
+            var _this4 = this;
+
+            document.addEventListener('keyup', function (event) {
+                if (event.keyCode === _constants.CONSTANTS.COMMON_KEY_CODES.ESC) {
+                    _this4._destroyBoundWithThis();
+                }
+            });
+        }
+    }, {
+        key: 'destructOnDocumentClick',
+        value: function destructOnDocumentClick() {
+            var _this5 = this;
+
+            document.addEventListener('click', function (event) {
+                var isChildElement = _this5.getFloaterElementFromChild(event.srcElement);
+                if (isChildElement === null) {
+                    _this5._destroyBoundWithThis();
+                }
+            });
         }
     }]);
 
@@ -908,10 +1019,10 @@ var Floater = function () {
 exports.default = Floater;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var random = __webpack_require__(9)
+var random = __webpack_require__(10)
 
 var url = '_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -943,7 +1054,7 @@ module.exports = function (size) {
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 var crypto = window.crypto || window.msCrypto
@@ -954,13 +1065,13 @@ module.exports = function (bytes) {
 
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(11);
+var content = __webpack_require__(12);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -985,7 +1096,7 @@ if(false) {
 }
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -993,13 +1104,13 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  transition: all 300ms ease;\r\n  box-sizing: border-box;\r\n  border: 1px solid;  \r\n  -webkit-backface-visibility: hidden;  \r\n          backface-visibility: hidden;\r\n  -webkit-transform: translateZ(0) scale(1.0, 1.0);\r\n          transform: translateZ(0) scale(1.0, 1.0);\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;    \r\n    left: 50%;\r\n    top: 50%;\r\n    -webkit-transform: translate(-50%, -50%);\r\n            transform: translate(-50%, -50%);\r\n  }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n    -webkit-transform: translate(-100%, -100%);\r\n            transform: translate(-100%, -100%);\r\n  }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  transition: all 300ms ease;\r\n  box-sizing: border-box;\r\n  border: 1px solid;  \r\n  -webkit-backface-visibility: hidden;  \r\n          backface-visibility: hidden;\r\n  -webkit-transform: translate(0%, 0%);\r\n          transform: translate(0%, 0%);\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;    \r\n    left: 50%;\r\n    top: 50%;\r\n    -webkit-transform: translate(-50%, -50%);\r\n            transform: translate(-50%, -50%);\r\n  }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
 
 // exports
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1025,70 +1136,6 @@ var IFloater = exports.IFloater = undefined;
         PopupPosition["AUTO"] = "AUTO";
     })(PopupPosition = IFloater.PopupPosition || (IFloater.PopupPosition = {}));
 })(IFloater || (exports.IFloater = IFloater = {}));
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var FloaterInstances = exports.FloaterInstances = function () {
-    function FloaterInstances() {
-        _classCallCheck(this, FloaterInstances);
-
-        this._instances = {}; // dynamically crated objects - key value pairs
-    }
-
-    _createClass(FloaterInstances, [{
-        key: "add",
-        value: function add(floater) {
-            this._instances[floater.configuration.guid] = floater;
-            console.debug(this._instances);
-        }
-    }, {
-        key: "destroy",
-        value: function destroy(floater) {
-            var guid = floater.configuration.guid;
-            var floaterInstance = this._instances[guid];
-            if (floaterInstance) floaterInstance.destroy();
-            delete this._instances[guid];
-            console.debug(this._instances);
-        }
-    }, {
-        key: "getInstanceById",
-        value: function getInstanceById(guid) {
-            return this._instances[guid];
-        }
-    }, {
-        key: "getInstancesOfType",
-        value: function getInstancesOfType(instanceType) {
-            var _this = this;
-
-            var instances = Object.keys(this._instances);
-            var result = [];
-            Object.keys(this._instances).forEach(function (instanceGuid) {
-                var instance = _this.getInstanceById(instanceGuid);
-                if (instance && instance.configuration.type === instanceType) {
-                    result.push(instance);
-                }
-            });
-            return result;
-        }
-    }]);
-
-    return FloaterInstances;
-}();
-
-var floaterInstances = exports.floaterInstances = new FloaterInstances();
 
 /***/ }),
 /* 14 */
@@ -1200,54 +1247,13 @@ exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bot
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.floaterManager = exports.FloaterManager = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _floaterInstances = __webpack_require__(13);
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-// wrapper class to encapsulate floater instances
-var FloaterManager = exports.FloaterManager = function () {
-    function FloaterManager() {
-        _classCallCheck(this, FloaterManager);
-    }
-
-    _createClass(FloaterManager, [{
-        key: 'getInstanceById',
-        value: function getInstanceById(guid) {
-            return _floaterInstances.floaterInstances.getInstanceById(guid);
-        }
-    }, {
-        key: 'destroy',
-        value: function destroy(instance) {
-            _floaterInstances.floaterInstances.destroy(instance);
-        }
-    }]);
-
-    return FloaterManager;
-}();
-
-var floaterManager = exports.floaterManager = new FloaterManager();
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
 exports.toasterContainer = exports.ToasterContainer = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _constants = __webpack_require__(2);
 
-__webpack_require__(19);
+__webpack_require__(18);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1292,13 +1298,13 @@ var ToasterContainer = exports.ToasterContainer = function () {
 var toasterContainer = exports.toasterContainer = new ToasterContainer();
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(20);
+var content = __webpack_require__(19);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -1323,7 +1329,7 @@ if(false) {
 }
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -1337,6 +1343,21 @@ exports.push([module.i, ".dom-toaster-container-base {\r\n  right: 5rem;\r\n  bo
 
 
 /***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var positionFloater = exports.positionFloater = function positionFloater(x, y) {
+    var style = 'left:' + x + 'px;' + 'top:' + y + 'px;';
+    return style;
+};
+
+/***/ }),
 /* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1346,11 +1367,36 @@ exports.push([module.i, ".dom-toaster-container-base {\r\n  right: 5rem;\r\n  bo
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var translate3d = exports.translate3d = function translate3d(x, y, z, t) {
-    t = typeof t === "undefined" ? 0 : t; //defaults to 0
-    var tr = '-webkit-transform: translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px); -webkit-transition: ' + t + 'ms;' + '-moz-transform: translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px); -moz-transition: ' + t + 'ms;' + '-ms-transform: translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px); -ms-transition: ' + t + 'ms;' + '-o-transform: translate(' + x + 'px, ' + y + 'px); -o-transition: ' + t + 'ms;' + 'transform: translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px); transition: ' + t + 'ms;';
-    return tr;
-};
+exports.floaterManager = exports.FloaterManager = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _floaterInstances = __webpack_require__(3);
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+// wrapper class to encapsulate floater instances
+var FloaterManager = exports.FloaterManager = function () {
+    function FloaterManager() {
+        _classCallCheck(this, FloaterManager);
+    }
+
+    _createClass(FloaterManager, [{
+        key: 'getInstanceById',
+        value: function getInstanceById(guid) {
+            return _floaterInstances.floaterInstances.getInstanceById(guid);
+        }
+    }, {
+        key: 'destroy',
+        value: function destroy(instance) {
+            _floaterInstances.floaterInstances.destroy(instance);
+        }
+    }]);
+
+    return FloaterManager;
+}();
+
+var floaterManager = exports.floaterManager = new FloaterManager();
 
 /***/ })
 /******/ ]);

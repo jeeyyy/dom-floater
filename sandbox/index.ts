@@ -7,7 +7,7 @@ const FloaterManager = dF.DomFloaterManager;
 
 const createFloater = (config) => {
     const floater = new Floater(config);
-    floater.show();
+    floater.show();    
     // JUST FOR TESTING
     setTimeout(() => {
         let closeButton = floater.getContentElementWithSelector('close-button');
@@ -57,7 +57,8 @@ document
                     >
                     Close
                 </button>
-            </div>`
+            </div>`,
+            expiry: 500
         };
         createFloater(config);
     });

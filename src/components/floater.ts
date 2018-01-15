@@ -5,7 +5,7 @@ import { IFloater } from '../interfaces';
 import { floaterInstances } from './floater-instances';
 import { masker } from './masker';
 import { toasterContainer } from './toaster-container';
-import { translate3d } from '../util';
+import { positionFloater } from '../util';
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -57,6 +57,7 @@ export default class Floater implements IFloater.Component {
       // create Modal
       document.body.appendChild(this._hostElement);
     }
+
     // HANDLE TOAST
     else if (this.configuration.type === IFloater.Type.TOAST) {
       // only init a toast container element if does not exist
@@ -64,25 +65,35 @@ export default class Floater implements IFloater.Component {
         toasterContainer.init();
       }
       toasterContainer.add(this._hostElement);
+
+      if (this.configuration.expiry) {
+        this.destructOnExpiry(this.configuration.expiry)();
+      }
+
     }
+
     // HANDLE POPUP
     else if (this.configuration.type === IFloater.Type.POPUP) {
-      // a pop up already exists
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 1) {
-        //dispose old one
-        // ideal world there is going to be only one ever
-        getCurrentInstanceOfType.forEach((instance: Floater) => {
-          instance.destroy();
-        })
-      }
-      // create popup styles
+
+      // create new popup
       if (this.configuration.popupTargetElement) {
         document.body.appendChild(this._hostElement);
         const rect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
-        this._hostElement.setAttribute('style', translate3d(rect.right, rect.top, 0, CONSTANTS.TRANSITION_TIMES));
+        this._hostElement.setAttribute('style', positionFloater(rect.right, rect.top));
       } else {
         throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_TYPE);
       }
+
+      // and delete the previous one
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
+        //dispose old one
+        getCurrentInstanceOfType.forEach((instance: Floater) => {
+          if (instance.configuration.guid !== this.configuration.guid) {
+            instance.destroy();
+          }
+        })
+      }
+
     }
     else {
       throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
@@ -93,11 +104,17 @@ export default class Floater implements IFloater.Component {
         this._hostElement.dataset[`isInitialising`] = `false`;
       }, 0);
       setTimeout(() => {
+        if (this.configuration.type === IFloater.Type.POPUP) {
+          this.destructOnEscape();
+          this.destructOnDocumentClick();
+        }
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
     });
 
   }
+
+
 
   destroy(): Promise<any> {
     // visual indicator for this element and delegate to the modal
@@ -116,7 +133,9 @@ export default class Floater implements IFloater.Component {
         // remove floater instance management
         floaterInstances.destroy(this);
         // remove from DOM
-        this._hostElement.parentElement.removeChild(this._hostElement)
+        if (this._hostElement.parentElement) {
+          this._hostElement.parentElement.removeChild(this._hostElement);
+        }
         resolve();
       }, CONSTANTS.TRANSITION_TIMES);
     });
@@ -130,11 +149,46 @@ export default class Floater implements IFloater.Component {
   getFloaterElementFromChild(contentChildElement: Element) {
     while (contentChildElement.parentNode) {
       contentChildElement = contentChildElement.parentNode as Element;
-      if (contentChildElement.classList.contains('dom-floater-base')) {
+      if (contentChildElement &&
+        contentChildElement.classList &&
+        contentChildElement.classList.length &&
+        contentChildElement.classList.contains('dom-floater-base')) {
         return contentChildElement;
       }
     }
     return null;
+  }
+
+  private destructOnExpiry(expiryDurtaion: number) {
+    let timer;
+    return () => {
+      clearTimeout(timer); // be sure to clear if object exists.
+      timer = setTimeout(() => {
+        this._destroyBoundWithThis();
+        clearTimeout(timer);
+      }, 5000);
+    };
+  }
+
+
+
+  private destructOnEscape() {
+    document.addEventListener('keyup',
+      (event: KeyboardEvent) => {
+        if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
+          this._destroyBoundWithThis();
+        }
+      });
+  }
+
+  private destructOnDocumentClick() {
+    document.addEventListener('click',
+      (event: MouseEvent) => {
+        const isChildElement = this.getFloaterElementFromChild(event.srcElement);
+        if (isChildElement === null) {
+          this._destroyBoundWithThis();
+        }
+      });
   }
 
 }

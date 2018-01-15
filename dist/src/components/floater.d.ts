@@ -14,4 +14,7 @@ export default class Floater implements IFloater.Component {
     destroy(): Promise<any>;
     getContentElementWithSelector(selector: string): Element;
     getFloaterElementFromChild(contentChildElement: Element): Element;
+    private destructOnExpiry(expiryDurtaion);
+    private destructOnEscape();
+    private destructOnDocumentClick();
 }
