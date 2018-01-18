@@ -2,6 +2,7 @@ export declare const CONSTANTS: {
     MESSAGES: {
         ERROR_IN_CONFIGURATION_NO_TYPE: string;
         ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: string;
+        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: string;
     };
     COMMON_KEY_CODES: {
         BACKSPACE: number;
@@ -47,7 +48,6 @@ export declare const CONSTANTS: {
         Q: number;
         TILDA: number;
     };
-    TRANSITION_TIMES: number;
     BREAKPOINTS: {
         XS: number;
         SM: number;

@@ -72,6 +72,7 @@
     "postcss-custom-media": "^6.0.0",
     "postcss-import": "^10.0.0",
     "postcss-loader": "^2.0.5",
-    "postcss-nested": "^2.0.2"
+    "postcss-nested": "^2.0.2",
+    "request-interval": "^2.0.0"
   }
 }

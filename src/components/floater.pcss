@@ -3,17 +3,16 @@
 
 .dom-floater-base {
   z-index: 1000;
-  transition: all 300ms ease;
-  box-sizing: border-box;
-  border: 1px solid;  
-  backface-visibility: hidden;
-  transform: translate(0%, 0%);
+  transition: all 150ms ease;
+  box-sizing: border-box;  
+ -webkit-font-smoothing: subpixel-antialiased;
 
   &.MODAL {
-    position: fixed;    
+    position: fixed;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
+    backface-visibility: hidden;
+    transform: translate(-50%, -50%) translateZ(0);
   }
 
   &.TOAST {

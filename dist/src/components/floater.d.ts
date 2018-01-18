@@ -8,13 +8,22 @@ export default class Floater implements IFloater.Component {
     private _hostElement;
     private _destroyBoundWithThis;
     private _callbacks;
+    private _popupPositioningScrollableParentElement;
+    private _popupPositioningInterval;
     configuration: IFloater.Configuration;
     constructor(configuration: IFloater.Configuration);
-    show(): Promise<void>;
+    show(): Promise<void> | void;
     destroy(): Promise<any>;
     getContentElementWithSelector(selector: string): Element;
     getFloaterElementFromChild(contentChildElement: Element): Element;
-    private destructOnExpiry(expiryDurtaion);
-    private destructOnEscape();
-    private destructOnDocumentClick();
+    private _getFloaterParentWithSelector(startEl, selector);
+    private _destructOnExpiry(expiryDurtaion);
+    private _destructOnEscape();
+    private _destructOnDocumentClick();
+    private _handleShowModal(getCurrentInstanceOfType);
+    private _handleShowToast(getCurrentInstanceOfType);
+    private _handleShowPopup(getCurrentInstanceOfType);
+    private _handleShow();
+    private isChildVisibleInsideParent(parent, child);
+    private _positionPopup();
 }

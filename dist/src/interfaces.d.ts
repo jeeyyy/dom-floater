@@ -11,20 +11,24 @@ export declare namespace IFloater {
         RIGHT = "RIGHT",
         AUTO = "AUTO",
     }
-    interface Dimensions {
-        width: number;
-        height: number;
+    enum PopupTriggerOn {
+        CLICK = "CLICK",
+        HOVER = "HOVER",
     }
     interface Configuration {
         type: Type;
         contentElement: Element | any;
         expiry?: number;
-        dimensions?: Dimensions;
-        popupTargetElement?: Element;
+        popupTargetElement?: HTMLElement;
         popupPosition?: PopupPosition;
+        popupTriggerOn?: PopupTriggerOn;
+        popupIsScrollableParentSelector?: string;
         guid?: string;
     }
     interface Component {
+        show(configuration: IFloater.Configuration): Promise<void> | void;
         destroy(): Promise<void>;
+        getContentElementWithSelector(selector: string): Element;
+        getFloaterElementFromChild(contentChildElement: Element): Element;
     }
 }

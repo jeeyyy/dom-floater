@@ -12,19 +12,19 @@ export class Masker {
         this._hostElement.className = `dom-masker-base`;
         this._hostElement.dataset['isInitialising'] = 'true';
         document.body.appendChild(this._hostElement);
-        setTimeout(() => {
+        requestAnimationFrame(() => { // force re-paint
             this._hostElement.dataset['isInitialising'] = 'false';
-        }, 0); // force re-paint
+        });
     }
 
     destroy() {
         this._hostElement
             .dataset['isDestructing'] = 'true';
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             this._hostElement
                 .parentElement
                 .removeChild(this._hostElement);
-        }, CONSTANTS.TRANSITION_TIMES);
+        });
     }
 }
 

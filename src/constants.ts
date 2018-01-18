@@ -1,7 +1,8 @@
 export const CONSTANTS = {
     MESSAGES: {
-        ERROR_IN_CONFIGURATION_NO_TYPE: `Error in Floater Configuration. No Type provided`,
-        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: `Error in Floater Configuration. No Popup Target Element provided.`
+        ERROR_IN_CONFIGURATION_NO_TYPE: `Error in Floater Configuration. No Floater Type provided`,
+        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: `Error in Floater Configuration. No Popup Target Element provided.`,
+        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: `Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector.`
     },
     COMMON_KEY_CODES: {
         BACKSPACE: 8,
@@ -52,7 +53,6 @@ export const CONSTANTS = {
         Q: 81,
         TILDA: 192
     },
-    TRANSITION_TIMES: 300, // this should match css transition times (we often fade things out then remove them)
     BREAKPOINTS: {
         XS: 400,
         SM: 680,

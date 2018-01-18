@@ -1,11 +1,12 @@
 import * as nanoid from 'nanoid';
-import { CONSTANTS } from './../constants';
+import * as requestInterval from 'request-interval';
 import './floater.pcss';
+import { CONSTANTS } from './../constants';
 import { IFloater } from '../interfaces';
 import { floaterInstances } from './floater-instances';
 import { masker } from './masker';
 import { toasterContainer } from './toaster-container';
-import { positionFloater } from '../util';
+import { getFloaterPositionStyle, isElementScrollable } from '../util';
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -13,15 +14,15 @@ import { positionFloater } from '../util';
  */
 export default class Floater implements IFloater.Component {
 
-  private _hostElement: HTMLElement; // TODO: this needs to be private
-
+  private _hostElement: HTMLElement;
   private _destroyBoundWithThis = this.destroy.bind(this);
   private _callbacks = {}; // dynamically constructed object
+  private _popupPositioningScrollableParentElement = null;
+  private _popupPositioningInterval = null;
 
   configuration: IFloater.Configuration;
 
   constructor(configuration: IFloater.Configuration) {
-
     // extend config object with uid
     configuration.guid = nanoid(10);
     this.configuration = configuration;
@@ -36,100 +37,50 @@ export default class Floater implements IFloater.Component {
       this._hostElement.innerHTML = configuration.contentElement;
     }
 
-    if (configuration.dimensions) {
-      this._hostElement.style.width = `${configuration.dimensions.width}px`
-      this._hostElement.style.height = `${configuration.dimensions.height}px`
-    }
-
-    // manage floater instance
+    // add to floater instances
     floaterInstances.add(this);
   }
 
-  show(): Promise<void> {
 
+  show(): Promise<void> | void {
     const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(this.configuration.type);
-    // HANDLE MODAL
-    if (this.configuration.type === IFloater.Type.MODAL) {
-      // only init a mask element if this is the first modal that is shown
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
-        masker.init();
-      }
-      // create Modal
-      document.body.appendChild(this._hostElement);
-    }
-
-    // HANDLE TOAST
-    else if (this.configuration.type === IFloater.Type.TOAST) {
-      // only init a toast container element if does not exist
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
-        toasterContainer.init();
-      }
-      toasterContainer.add(this._hostElement);
-
-      if (this.configuration.expiry) {
-        this.destructOnExpiry(this.configuration.expiry)();
-      }
-
-    }
-
-    // HANDLE POPUP
-    else if (this.configuration.type === IFloater.Type.POPUP) {
-
-      // create new popup
-      if (this.configuration.popupTargetElement) {
-        document.body.appendChild(this._hostElement);
-        const rect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
-        this._hostElement.setAttribute('style', positionFloater(rect.right, rect.top));
-      } else {
-        throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_TYPE);
-      }
-
-      // and delete the previous one
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
-        //dispose old one
-        getCurrentInstanceOfType.forEach((instance: Floater) => {
-          if (instance.configuration.guid !== this.configuration.guid) {
-            instance.destroy();
-          }
-        })
-      }
-
-    }
-    else {
-      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
-    }
-
-    return new Promise((resolve, reject) => {
-      setTimeout(() => { // the time out waits for the css kicks in.
-        this._hostElement.dataset[`isInitialising`] = `false`;
-      }, 0);
-      setTimeout(() => {
-        if (this.configuration.type === IFloater.Type.POPUP) {
-          this.destructOnEscape();
-          this.destructOnDocumentClick();
+    if (this.configuration.type) {
+      switch (this.configuration.type) {
+        case IFloater.Type.MODAL: {
+          return this._handleShowModal(getCurrentInstanceOfType);
         }
-        resolve();
-      }, CONSTANTS.TRANSITION_TIMES);
-    });
-
+        case IFloater.Type.TOAST: {
+          return this._handleShowToast(getCurrentInstanceOfType);
+        }
+        case IFloater.Type.POPUP: {
+          return this._handleShowPopup(getCurrentInstanceOfType);
+        }
+      }
+    } else {
+      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_TYPE);
+    }
   }
-
-
 
   destroy(): Promise<any> {
     // visual indicator for this element and delegate to the modal
     this._hostElement.dataset['isDestructing'] = 'true';
-
-    // only init a mask element if this is the first modal that is shown
-    if (this.configuration.type === IFloater.Type.MODAL) {
-      const doesMaskAlreadyExist = floaterInstances.getInstancesOfType(IFloater.Type.MODAL);
-      if (doesMaskAlreadyExist.length <= 1) {
-        masker.destroy();
+    switch (this.configuration.type) {
+      case IFloater.Type.MODAL: {
+        const doesMaskAlreadyExist = floaterInstances.getInstancesOfType(IFloater.Type.MODAL);
+        if (doesMaskAlreadyExist.length <= 1) {
+          masker.destroy();
+        }
+      }
+      case IFloater.Type.TOAST: {
+      }
+      case IFloater.Type.POPUP: {
+        if (this._popupPositioningInterval) {
+          requestInterval.clear(this._popupPositioningInterval);
+        }
       }
     }
-
     return new Promise((resolve) => {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         // remove floater instance management
         floaterInstances.destroy(this);
         // remove from DOM
@@ -137,16 +88,15 @@ export default class Floater implements IFloater.Component {
           this._hostElement.parentElement.removeChild(this._hostElement);
         }
         resolve();
-      }, CONSTANTS.TRANSITION_TIMES);
+      })
     });
-
   }
 
   getContentElementWithSelector(selector: string): Element {
     return this._hostElement.getElementsByClassName(selector)[0];
   }
 
-  getFloaterElementFromChild(contentChildElement: Element) {
+  getFloaterElementFromChild(contentChildElement: Element): Element {
     while (contentChildElement.parentNode) {
       contentChildElement = contentChildElement.parentNode as Element;
       if (contentChildElement &&
@@ -159,20 +109,31 @@ export default class Floater implements IFloater.Component {
     return null;
   }
 
-  private destructOnExpiry(expiryDurtaion: number) {
+  private _getFloaterParentWithSelector(startEl: HTMLElement, selector: string): HTMLElement {
+    while (startEl.parentNode) {
+      startEl = startEl.parentNode as HTMLElement;
+      if (startEl &&
+        startEl.classList &&
+        startEl.classList.length &&
+        startEl.classList.contains(selector)) {
+        return startEl;
+      }
+    }
+    return null;
+  }
+
+  private _destructOnExpiry(expiryDurtaion: number) {
     let timer;
     return () => {
       clearTimeout(timer); // be sure to clear if object exists.
       timer = setTimeout(() => {
         this._destroyBoundWithThis();
         clearTimeout(timer);
-      }, 5000);
+      }, expiryDurtaion);
     };
   }
 
-
-
-  private destructOnEscape() {
+  private _destructOnEscape() {
     document.addEventListener('keyup',
       (event: KeyboardEvent) => {
         if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
@@ -181,7 +142,7 @@ export default class Floater implements IFloater.Component {
       });
   }
 
-  private destructOnDocumentClick() {
+  private _destructOnDocumentClick() {
     document.addEventListener('click',
       (event: MouseEvent) => {
         const isChildElement = this.getFloaterElementFromChild(event.srcElement);
@@ -189,6 +150,116 @@ export default class Floater implements IFloater.Component {
           this._destroyBoundWithThis();
         }
       });
+  }
+
+
+  private _handleShowModal(getCurrentInstanceOfType: Floater[]) {
+    // only init a mask element if this is the first modal that is shown
+    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+      masker.init();
+    }
+    // create Modal
+    document.body.appendChild(this._hostElement);
+    this._handleShow();
+  }
+
+  private _handleShowToast(getCurrentInstanceOfType: Floater[]) {
+    // only init a toast container element if does not exist
+    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+      toasterContainer.init();
+    }
+    toasterContainer.add(this._hostElement);
+    // if has expiry - start destruction timer
+    if (this.configuration.expiry) {
+      this._destructOnExpiry(this.configuration.expiry)();
+    }
+    this._handleShow();
+  }
+
+  private _handleShowPopup(getCurrentInstanceOfType: Floater[]) {
+    if (this.configuration.popupTargetElement) {
+      document
+        .body
+        .appendChild(this._hostElement);
+    } else {
+      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
+    }
+    // and delete the previous one
+    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
+      //dispose old one
+      getCurrentInstanceOfType
+        .forEach((instance: Floater) => {
+          if (instance.configuration.guid !== this.configuration.guid) {
+            instance.destroy();
+          }
+        });
+    }
+    this._handleShow();
+  }
+
+
+
+
+  private _handleShow() {
+    return new Promise((resolve, reject) => {
+      requestAnimationFrame(() => { // the time out waits for the css kicks in.
+        this._hostElement.dataset[`isInitialising`] = `false`;
+      });
+      requestAnimationFrame(() => {
+        if (this.configuration.type === IFloater.Type.POPUP) {
+          this._destructOnEscape();
+          this._destructOnDocumentClick();
+        }
+        resolve();
+      });
+    });
+  }
+
+  // const position = (dom) => {
+  //   const isScrollable = isElementScrollable(dom);
+  //   console.log(isScrollable, dom);
+  // }
+
+  private isChildVisibleInsideParent(parent: HTMLElement, child: HTMLElement) {
+    const pR: ClientRect = parent.getBoundingClientRect();
+    const cR: ClientRect = child.getBoundingClientRect();
+
+    const pOverflow = isElementScrollable(parent);
+    if(pOverflow.y) {
+      const cH = Math.abs(cR.bottom - cR.top);
+      
+    }
+    
+  }
+
+  private _positionPopup() {
+    if (this.configuration.popupIsScrollableParentSelector) {
+      this._popupPositioningInterval = requestInterval(300, () => {
+
+      });
+    }
+
+    if (this.configuration.popupIsScrollableParentSelector) {
+      this._popupPositioningScrollableParentElement =
+        this._popupPositioningScrollableParentElement
+          ? this._popupPositioningScrollableParentElement
+          : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
+      if (this._popupPositioningScrollableParentElement) {
+
+        const parentOverflow = isElementScrollable(this._popupPositioningScrollableParentElement);
+        const getElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+        const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+        if (parentOverflow.y) {
+          let childHeight
+        }
+
+      } else {
+        throw new Error(CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
+      }
+    } else {
+      const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+      this._hostElement.setAttribute('style', getFloaterPositionStyle(targetElRect.right, targetElRect.top));
+    }
   }
 
 }

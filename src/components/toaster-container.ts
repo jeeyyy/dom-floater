@@ -12,25 +12,24 @@ export class ToasterContainer {
         this._hostElement.className = `dom-toaster-container-base`;
         this._hostElement.dataset['isInitialising'] = 'true';
         document.body.appendChild(this._hostElement);
-
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             this._hostElement.dataset['isInitialising'] = 'false';
-        }, 0); // force re-paint
+        });
     }
 
     add(toastElement: HTMLElement) {
         this._hostElement.appendChild(toastElement);
     }
 
-    
+
 
     destroy() {
         this._hostElement.dataset['isDestructing'] = 'true';
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             this._hostElement
                 .parentElement
                 .removeChild(this._hostElement);
-        }, CONSTANTS.TRANSITION_TIMES);
+        });
     }
 }
 

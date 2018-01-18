@@ -14,35 +14,31 @@ export namespace IFloater {
         AUTO = 'AUTO'
     }
 
-    export interface Dimensions {
-        width: number;
-        height: number;
+    export enum PopupTriggerOn {
+        CLICK = 'CLICK',
+        HOVER = 'HOVER'
     }
 
     export interface Configuration {
         type: Type,
         contentElement: Element | any;
-
-        // OPTIONAL PROPERTIES - common to any type
+        // TOAST Properties
         expiry?: number; // milliseconds
-        dimensions?: Dimensions;
-
         // POPUP PROPERTIES
-        popupTargetElement?: Element;
-        popupPosition?: PopupPosition
-
+        popupTargetElement?: HTMLElement;
+        popupPosition?: PopupPosition;
+        popupTriggerOn?: PopupTriggerOn;
+        popupIsScrollableParentSelector?: string;
         // INTERNAL PROPERTIES
         guid?: string;
     }
 
 
     export interface Component {
-        // show functions
-        // show(configuration: IFloaterConfiguration): Promise<void>;
+        show(configuration: IFloater.Configuration): Promise<void> | void;
         destroy(): Promise<void>;
-        // init: (parentElement?: HTMLElement) => Promise<void>;
-        // addListeners();
+        getContentElementWithSelector(selector: string): Element;
+        getFloaterElementFromChild(contentChildElement: Element): Element;
     }
-
 
 }
