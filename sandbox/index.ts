@@ -60,7 +60,7 @@ document
                     Close
                 </button>
             </div>`,
-            expiry: 500
+            expiry: 1000
         };
         createFloater(config);
     });

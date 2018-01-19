@@ -1,7 +1,6 @@
-import './masker.pcss';
+import "./masker.pcss";
 export declare class Masker {
     private _hostElement;
-    constructor();
     init(): void;
     destroy(): void;
 }

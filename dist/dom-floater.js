@@ -794,14 +794,15 @@ var Floater = function () {
         this._callbacks = {}; // dynamically constructed object
         this._popupPositioningScrollableParentElement = null;
         this._popupPositioningInterval = null;
+        this._popupPreviousComputedTargetElRect = null;
         // extend config object with uid
         configuration.guid = nanoid(10);
         this.configuration = configuration;
         // create DOM
-        this._hostElement = document.createElement('ARTICLE');
-        this._hostElement.className = 'dom-floater-base ' + configuration.type;
-        this._hostElement.dataset['guid'] = configuration.guid;
-        this._hostElement.dataset['isInitialising'] = 'true';
+        this._hostElement = document.createElement("ARTICLE");
+        this._hostElement.className = "dom-floater-base " + configuration.type;
+        this._hostElement.dataset["guid"] = configuration.guid;
+        this._hostElement.dataset["isInitialising"] = "true";
         if (configuration.contentElement) {
             this._hostElement.innerHTML = configuration.contentElement;
         }
@@ -810,7 +811,7 @@ var Floater = function () {
     }
 
     _createClass(Floater, [{
-        key: 'show',
+        key: "show",
         value: function show() {
             var getCurrentInstanceOfType = _floaterInstances.floaterInstances.getInstancesOfType(this.configuration.type);
             if (this.configuration.type) {
@@ -833,28 +834,29 @@ var Floater = function () {
             }
         }
     }, {
-        key: 'destroy',
+        key: "destroy",
         value: function destroy() {
             var _this = this;
 
             // visual indicator for this element and delegate to the modal
-            this._hostElement.dataset['isDestructing'] = 'true';
+            this._hostElement.dataset["isDestructing"] = "true";
             switch (this.configuration.type) {
                 case _interfaces.IFloater.Type.MODAL:
-                    {
-                        var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
-                        if (doesMaskAlreadyExist.length <= 1) {
-                            _masker.masker.destroy();
-                        }
+                    var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
+                    if (doesMaskAlreadyExist.length <= 1) {
+                        _masker.masker.destroy();
                     }
+                    break;
                 case _interfaces.IFloater.Type.TOAST:
-                    {}
+                    break;
                 case _interfaces.IFloater.Type.POPUP:
-                    {
-                        if (this._popupPositioningInterval) {
-                            requestInterval.clear(this._popupPositioningInterval);
-                        }
+                    if (this._popupPositioningInterval) {
+                        requestInterval.clear(this._popupPositioningInterval);
+                        this._popupPositioningInterval = null;
                     }
+                    this._popupPositioningScrollableParentElement = null;
+                    this._popupPreviousComputedTargetElRect = null;
+                    break;
             }
             return new Promise(function (resolve) {
                 requestAnimationFrame(function () {
@@ -869,23 +871,28 @@ var Floater = function () {
             });
         }
     }, {
-        key: 'getContentElementWithSelector',
+        key: "getGuid",
+        value: function getGuid() {
+            return this.configuration.guid;
+        }
+    }, {
+        key: "getContentElementWithSelector",
         value: function getContentElementWithSelector(selector) {
             return this._hostElement.getElementsByClassName(selector)[0];
         }
     }, {
-        key: 'getFloaterElementFromChild',
+        key: "getFloaterElementFromChild",
         value: function getFloaterElementFromChild(contentChildElement) {
             while (contentChildElement.parentNode) {
                 contentChildElement = contentChildElement.parentNode;
-                if (contentChildElement && contentChildElement.classList && contentChildElement.classList.length && contentChildElement.classList.contains('dom-floater-base')) {
+                if (contentChildElement && contentChildElement.classList && contentChildElement.classList.length && contentChildElement.classList.contains("dom-floater-base")) {
                     return contentChildElement;
                 }
             }
             return null;
         }
     }, {
-        key: '_getFloaterParentWithSelector',
+        key: "_getFloaterParentWithSelector",
         value: function _getFloaterParentWithSelector(startEl, selector) {
             while (startEl.parentNode) {
                 startEl = startEl.parentNode;
@@ -896,7 +903,7 @@ var Floater = function () {
             return null;
         }
     }, {
-        key: '_destructOnExpiry',
+        key: "_destructOnExpiry",
         value: function _destructOnExpiry(expiryDurtaion) {
             var _this2 = this;
 
@@ -910,22 +917,22 @@ var Floater = function () {
             };
         }
     }, {
-        key: '_destructOnEscape',
+        key: "_destructOnEscape",
         value: function _destructOnEscape() {
             var _this3 = this;
 
-            document.addEventListener('keyup', function (event) {
+            document.addEventListener("keyup", function (event) {
                 if (event.keyCode === _constants.CONSTANTS.COMMON_KEY_CODES.ESC) {
                     _this3._destroyBoundWithThis();
                 }
             });
         }
     }, {
-        key: '_destructOnDocumentClick',
+        key: "_destructOnDocumentClick",
         value: function _destructOnDocumentClick() {
             var _this4 = this;
 
-            document.addEventListener('click', function (event) {
+            document.addEventListener("click", function (event) {
                 var isChildElement = _this4.getFloaterElementFromChild(event.srcElement);
                 if (isChildElement === null) {
                     _this4._destroyBoundWithThis();
@@ -933,7 +940,7 @@ var Floater = function () {
             });
         }
     }, {
-        key: '_handleShowModal',
+        key: "_handleShowModal",
         value: function _handleShowModal(getCurrentInstanceOfType) {
             // only init a mask element if this is the first modal that is shown
             if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
@@ -944,7 +951,7 @@ var Floater = function () {
             this._handleShow();
         }
     }, {
-        key: '_handleShowToast',
+        key: "_handleShowToast",
         value: function _handleShowToast(getCurrentInstanceOfType) {
             // only init a toast container element if does not exist
             if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
@@ -958,18 +965,19 @@ var Floater = function () {
             this._handleShow();
         }
     }, {
-        key: '_handleShowPopup',
+        key: "_handleShowPopup",
         value: function _handleShowPopup(getCurrentInstanceOfType) {
             var _this5 = this;
 
             if (this.configuration.popupTargetElement) {
                 document.body.appendChild(this._hostElement);
+                this._positionPopup();
             } else {
                 throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
             }
             // and delete the previous one
             if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
-                //dispose old one
+                // dispose old one
                 getCurrentInstanceOfType.forEach(function (instance) {
                     if (instance.configuration.guid !== _this5.configuration.guid) {
                         instance.destroy();
@@ -979,13 +987,14 @@ var Floater = function () {
             this._handleShow();
         }
     }, {
-        key: '_handleShow',
+        key: "_handleShow",
         value: function _handleShow() {
             var _this6 = this;
 
             return new Promise(function (resolve, reject) {
                 requestAnimationFrame(function () {
-                    _this6._hostElement.dataset['isInitialising'] = 'false';
+                    // the time out waits for the css kicks in.
+                    _this6._hostElement.dataset["isInitialising"] = "false";
                 });
                 requestAnimationFrame(function () {
                     if (_this6.configuration.type === _interfaces.IFloater.Type.POPUP) {
@@ -996,42 +1005,44 @@ var Floater = function () {
                 });
             });
         }
-        // const position = (dom) => {
-        //   const isScrollable = isElementScrollable(dom);
-        //   console.log(isScrollable, dom);
-        // }
-
     }, {
-        key: 'isChildVisibleInsideParent',
-        value: function isChildVisibleInsideParent(parent, child) {
-            var pR = parent.getBoundingClientRect();
-            var cR = child.getBoundingClientRect();
-            var pOverflow = (0, _util.isElementScrollable)(parent);
-            if (pOverflow.y) {
-                var cH = Math.abs(cR.bottom - cR.top);
+        key: "_positionPopup",
+        value: function _positionPopup() {
+            var _this7 = this;
+
+            if (this.configuration.popupIsScrollableParentSelector) {
+                // if a scrollable parent's selector is provided - get the parent scrollable element
+                this._popupPositioningInterval = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
+                    _this7._computePosition();
+                });
+                this._computePosition();
+            } else {
+                // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
+                var targetElRect = this.configuration.popupTargetElement.getBoundingClientRect();
+                this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(targetElRect.right, targetElRect.top));
             }
         }
     }, {
-        key: '_positionPopup',
-        value: function _positionPopup() {
-            if (this.configuration.popupIsScrollableParentSelector) {
-                this._popupPositioningInterval = requestInterval(300, function () {});
-            }
-            if (this.configuration.popupIsScrollableParentSelector) {
-                this._popupPositioningScrollableParentElement = this._popupPositioningScrollableParentElement ? this._popupPositioningScrollableParentElement : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
-                if (this._popupPositioningScrollableParentElement) {
-                    var parentOverflow = (0, _util.isElementScrollable)(this._popupPositioningScrollableParentElement);
-                    var getElRect = this.configuration.popupTargetElement.getBoundingClientRect();
-                    var targetElRect = this.configuration.popupTargetElement.getBoundingClientRect();
-                    if (parentOverflow.y) {
-                        var childHeight = void 0;
+        key: "_computePosition",
+        value: function _computePosition() {
+            this._popupPositioningScrollableParentElement = this._popupPositioningScrollableParentElement ? this._popupPositioningScrollableParentElement : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
+            if (this._popupPositioningScrollableParentElement) {
+                var parentOverflow = (0, _util.isElementScrollable)(this._popupPositioningScrollableParentElement);
+                if (parentOverflow.x || parentOverflow.y) {
+                    // there is an overflow/ scroll in one of the directions
+                    var inView = (0, _util.isInView)(this.configuration.popupTargetElement, this._popupPositioningScrollableParentElement);
+                    if (inView.isInView) {
+                        if (JSON.stringify(this._popupPreviousComputedTargetElRect) !== JSON.stringify(inView.elementRect)) {
+                            this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(inView.elementRect.right, inView.elementRect.top));
+                            this._popupPreviousComputedTargetElRect = inView.elementRect;
+                        }
+                    } else {
+                        this._hostElement.setAttribute("style", (0, _util.getStyleToHideFloater)());
+                        this._popupPreviousComputedTargetElRect = inView.elementRect;
                     }
-                } else {
-                    throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
                 }
             } else {
-                var _targetElRect = this.configuration.popupTargetElement.getBoundingClientRect();
-                this._hostElement.setAttribute('style', (0, _util.getFloaterPositionStyle)(_targetElRect.right, _targetElRect.top));
+                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
             }
         }
     }]);
@@ -1159,7 +1170,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  transition: all 150ms ease;\r\n  box-sizing: border-box;  \r\n -webkit-font-smoothing: subpixel-antialiased;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%;\r\n    -webkit-backface-visibility: hidden;\r\n            backface-visibility: hidden;\r\n    -webkit-transform: translate(-50%, -50%) translateZ(0);\r\n            transform: translate(-50%, -50%) translateZ(0);\r\n  }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  box-sizing: border-box;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%; \r\n    -webkit-transform: translateX(-50%) translateY(-50%); \r\n            transform: translateX(-50%) translateY(-50%);\r\n  }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
 
 // exports
 
@@ -1175,7 +1186,12 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 var CONSTANTS = exports.CONSTANTS = {
+    TIME_SPAN: {
+        MS_50: 50,
+        MS_300: 300
+    },
     MESSAGES: {
+        ERROR_NO_DOCUMENT_BODY: "No document or html body present.",
         ERROR_IN_CONFIGURATION_NO_TYPE: "Error in Floater Configuration. No Floater Type provided",
         ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: "Error in Floater Configuration. No Popup Target Element provided.",
         ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: "Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector."
@@ -1289,24 +1305,25 @@ var Masker = exports.Masker = function () {
     }
 
     _createClass(Masker, [{
-        key: 'init',
+        key: "init",
         value: function init() {
             var _this = this;
 
-            this._hostElement = document.createElement('DIV');
-            this._hostElement.className = 'dom-masker-base';
-            this._hostElement.dataset['isInitialising'] = 'true';
+            this._hostElement = document.createElement("DIV");
+            this._hostElement.className = "dom-masker-base";
+            this._hostElement.dataset["isInitialising"] = "true";
             document.body.appendChild(this._hostElement);
             requestAnimationFrame(function () {
-                _this._hostElement.dataset['isInitialising'] = 'false';
+                // force re-paint
+                _this._hostElement.dataset["isInitialising"] = "false";
             });
         }
     }, {
-        key: 'destroy',
+        key: "destroy",
         value: function destroy() {
             var _this2 = this;
 
-            this._hostElement.dataset['isDestructing'] = 'true';
+            this._hostElement.dataset["isDestructing"] = "true";
             requestAnimationFrame(function () {
                 _this2._hostElement.parentElement.removeChild(_this2._hostElement);
             });
@@ -1358,7 +1375,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 1;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n  transition: all 150ms ease;\r\n}", ""]);
+exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 999;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n}", ""]);
 
 // exports
 
@@ -1387,29 +1404,29 @@ var ToasterContainer = exports.ToasterContainer = function () {
     }
 
     _createClass(ToasterContainer, [{
-        key: 'init',
+        key: "init",
         value: function init() {
             var _this = this;
 
-            this._hostElement = document.createElement('DIV');
-            this._hostElement.className = 'dom-toaster-container-base';
-            this._hostElement.dataset['isInitialising'] = 'true';
+            this._hostElement = document.createElement("DIV");
+            this._hostElement.className = "dom-toaster-container-base";
+            this._hostElement.dataset["isInitialising"] = "true";
             document.body.appendChild(this._hostElement);
             requestAnimationFrame(function () {
-                _this._hostElement.dataset['isInitialising'] = 'false';
+                _this._hostElement.dataset["isInitialising"] = "false";
             });
         }
     }, {
-        key: 'add',
+        key: "add",
         value: function add(toastElement) {
             this._hostElement.appendChild(toastElement);
         }
     }, {
-        key: 'destroy',
+        key: "destroy",
         value: function destroy() {
             var _this2 = this;
 
-            this._hostElement.dataset['isDestructing'] = 'true';
+            this._hostElement.dataset["isDestructing"] = "true";
             requestAnimationFrame(function () {
                 _this2._hostElement.parentElement.removeChild(_this2._hostElement);
             });
@@ -1461,7 +1478,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-toaster-container-base {\r\n  right: 5rem;\r\n  bottom: 5rem;\r\n  width: 250px;\r\n  position: fixed;\r\n  z-index: 1;      \r\n}", ""]);
+exports.push([module.i, ".dom-toaster-container-base {\r\n  position: fixed;\r\n  top: 0rem;\r\n  left: 50%;\r\n  -webkit-transform: translateX(-50%) translateY(0);\r\n          transform: translateX(-50%) translateY(0);\r\n  z-index: 1001;\r\n}", ""]);
 
 // exports
 
@@ -1476,16 +1493,46 @@ exports.push([module.i, ".dom-toaster-container-base {\r\n  right: 5rem;\r\n  bo
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var getFloaterPositionStyle = exports.getFloaterPositionStyle = function getFloaterPositionStyle(x, y) {
-    return 'left:' + x + 'px;' + 'top:' + y + 'px;';
+exports.isInView = exports.isElementScrollable = exports.getStyleToHideFloater = exports.getStyleToShowFloater = undefined;
+
+var _constants = __webpack_require__(13);
+
+var getStyleToShowFloater = exports.getStyleToShowFloater = function getStyleToShowFloater(x, y) {
+    return "left: " + x + "px; top: " + y + "px; visibility: visible; pointer-events: all; opacity: 1.0;";
+};
+var getStyleToHideFloater = exports.getStyleToHideFloater = function getStyleToHideFloater() {
+    return "left: -9999px; top: -9999px; opacity: 0; visibility: hidden; pointer-events: none;";
 };
 var isElementScrollable = exports.isElementScrollable = function isElementScrollable(element) {
     element = element[0] ? element[0] : element;
-    var oArr = ['visible', 'hidden'];
+    var stylesToCheck = ["visible", "hidden"];
     return {
-        y: element.scrollHeight > element.offsetHeight && (oArr.indexOf(getComputedStyle(element, null).getPropertyValue('overflow')) < 0 || oArr.indexOf(getComputedStyle(element, null).getPropertyValue('overflow-y')) < 0),
-        x: element.scrollWidth > element.offsetWidth && (oArr.indexOf(getComputedStyle(element, null).getPropertyValue('overflow')) < 0 || oArr.indexOf(getComputedStyle(element, null).getPropertyValue('overflow-x')) < 0)
+        y: element.scrollHeight > element.offsetHeight && (stylesToCheck.indexOf(getComputedStyle(element, null).getPropertyValue("overflow")) < 0 || stylesToCheck.indexOf(getComputedStyle(element, null).getPropertyValue("overflow-y")) < 0),
+        x: element.scrollWidth > element.offsetWidth && (stylesToCheck.indexOf(getComputedStyle(element, null).getPropertyValue("overflow")) < 0 || stylesToCheck.indexOf(getComputedStyle(element, null).getPropertyValue("overflow-x")) < 0)
     };
+};
+var isInView = exports.isInView = function isInView(element, containerElement) {
+    containerElement = containerElement ? containerElement : document.body;
+    if (!containerElement) {
+        throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_NO_DOCUMENT_BODY);
+    }
+    var containerElementRect = containerElement.getBoundingClientRect();
+    var elementRect = element.getBoundingClientRect();
+    var isVerticallyInBounds = elementRect.top >= containerElementRect.top && elementRect.bottom <= containerElementRect.bottom;
+    var isHorizontallyInBounds = elementRect.left >= containerElementRect.left && elementRect.right <= containerElementRect.right;
+    if (isVerticallyInBounds && isHorizontallyInBounds) {
+        return {
+            isInView: true,
+            elementRect: elementRect,
+            containerRect: containerElementRect
+        };
+    } else {
+        return {
+            isInView: false,
+            elementRect: elementRect,
+            containerRect: containerElementRect
+        };
+    }
 };
 
 /***/ }),
@@ -1513,12 +1560,12 @@ var FloaterManager = exports.FloaterManager = function () {
     }
 
     _createClass(FloaterManager, [{
-        key: 'getInstanceById',
+        key: "getInstanceById",
         value: function getInstanceById(guid) {
             return _floaterInstances.floaterInstances.getInstanceById(guid);
         }
     }, {
-        key: 'destroy',
+        key: "destroy",
         value: function destroy(instance) {
             _floaterInstances.floaterInstances.destroy(instance);
         }

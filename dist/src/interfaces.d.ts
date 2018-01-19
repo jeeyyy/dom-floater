@@ -28,6 +28,7 @@ export declare namespace IFloater {
     interface Component {
         show(configuration: IFloater.Configuration): Promise<void> | void;
         destroy(): Promise<void>;
+        getGuid(): string;
         getContentElementWithSelector(selector: string): Element;
         getFloaterElementFromChild(contentChildElement: Element): Element;
     }

@@ -1,5 +1,10 @@
 export declare const CONSTANTS: {
+    TIME_SPAN: {
+        MS_50: number;
+        MS_300: number;
+    };
     MESSAGES: {
+        ERROR_NO_DOCUMENT_BODY: string;
         ERROR_IN_CONFIGURATION_NO_TYPE: string;
         ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: string;
         ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: string;

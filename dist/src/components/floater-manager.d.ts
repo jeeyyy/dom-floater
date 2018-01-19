@@ -1,4 +1,4 @@
-import Floater from './floater';
+import Floater from "./floater";
 export declare class FloaterManager {
     getInstanceById(guid: string): Floater;
     destroy(instance: any): void;
