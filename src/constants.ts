@@ -6,6 +6,7 @@ export const CONSTANTS = {
   MESSAGES: {
     ERROR_NO_DOCUMENT_BODY: `No document or html body present.`,
     ERROR_IN_CONFIGURATION_NO_TYPE: `Error in Floater Configuration. No Floater Type provided`,
+    ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE: `Error in Floater Configuration. No Content Element Type provided`,
     ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: `Error in Floater Configuration. No Popup Target Element provided.`,
     ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: `Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector.`
   },

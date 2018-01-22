@@ -15,9 +15,14 @@ export declare namespace IFloater {
         CLICK = "CLICK",
         HOVER = "HOVER",
     }
+    enum ContentElementType {
+        NODE = "NODE",
+        TEMPLATE = "TEMPLATE",
+    }
     interface Configuration {
         type: Type;
         contentElement: Element | any;
+        contentElementType: ContentElementType;
         expiry?: number;
         popupTargetElement?: HTMLElement;
         popupPosition?: PopupPosition;

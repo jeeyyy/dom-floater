@@ -18,9 +18,15 @@ export namespace IFloater {
     HOVER = "HOVER"
   }
 
+  export enum ContentElementType {
+    NODE = "NODE",
+    TEMPLATE = "TEMPLATE"
+  }
+
   export interface Configuration {
     type: Type;
     contentElement: Element | any;
+    contentElementType: ContentElementType;
     // TOAST Properties
     expiry?: number; // milliseconds
     // POPUP PROPERTIES

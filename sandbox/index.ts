@@ -1,6 +1,6 @@
 // import * as DomFloater from '../dist/dom-floater.js';
-import * as dF from '../src/index';
-// import * as dF from '../dist/dom-floater';
+// import * as dF from '../src/index';
+import * as dF from '../dist/dom-floater';
 import { IFloater } from '../src/interfaces';
 
 const Floater = dF.DomFloater.default;
@@ -29,18 +29,24 @@ const createFloater = (config) => {
 document
     .getElementById(`createModal`)
     .addEventListener('click', () => {
+        const node = document.getElementsByClassName('nodeMoveTest')[0];
+        node.addEventListener('click', () => {
+            console.log('clicked');
+        })
         const config: IFloater.Configuration = {
             type: IFloater.Type.MODAL,
-            contentElement: `
-            <div>
-                Some Modal Content. ${ Math.floor(Math.random() * 100)}
-                <button 
-                    type='button'
-                    class='close-button'
-                    >
-                    Close
-                </button>
-            </div>`
+            // contentElement: `
+            // <div>
+            //     Some Modal Content. ${ Math.floor(Math.random() * 100)}
+            //     <button 
+            //         type='button'
+            //         class='close-button'
+            //         >
+            //         Close
+            //     </button>
+            // </div>`,
+            contentElement: node,
+            contentElementType: IFloater.ContentElementType.NODE
         };
         createFloater(config);
     });
@@ -60,6 +66,7 @@ document
                     Close
                 </button>
             </div>`,
+            contentElementType: IFloater.ContentElementType.TEMPLATE,
             expiry: 1000
         };
         createFloater(config);
@@ -86,6 +93,7 @@ document
                     Close
                 </button>
             </div>`,
+            contentElementType: IFloater.ContentElementType.TEMPLATE,
             popupTargetElement: popupTargetElement,
             popupIsScrollableParentSelector: popupIsScrollableParentSelector
         };

@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -202,7 +202,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(6);
+var	fixUrls = __webpack_require__(7);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -524,6 +524,80 @@ function updateLink (link, options, obj) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+var CONSTANTS = exports.CONSTANTS = {
+    TIME_SPAN: {
+        MS_50: 50,
+        MS_300: 300
+    },
+    MESSAGES: {
+        ERROR_NO_DOCUMENT_BODY: "No document or html body present.",
+        ERROR_IN_CONFIGURATION_NO_TYPE: "Error in Floater Configuration. No Floater Type provided",
+        ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE: "Error in Floater Configuration. No Content Element Type provided",
+        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: "Error in Floater Configuration. No Popup Target Element provided.",
+        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: "Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector."
+    },
+    COMMON_KEY_CODES: {
+        BACKSPACE: 8,
+        RETURN: 13,
+        ESC: 27,
+        SPACE: 32,
+        LEFT: 37,
+        UP: 38,
+        RIGHT: 39,
+        DOWN: 40,
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        a: 65,
+        b: 66,
+        F: 70,
+        k: 75,
+        m: 77,
+        WIN_or_CMD: 91 // to detect cmd on key up use this, on keydown you can use event.metaKey
+    },
+    KEYS: {
+        BACKSPACE: 8,
+        TAB: 9,
+        RETURN: 13,
+        ESC: 27,
+        SPACE: 32,
+        LEFT: 37,
+        UP: 38,
+        RIGHT: 39,
+        DOWN: 40,
+        DELETE: 46,
+        HOME: 36,
+        END: 35,
+        PAGEUP: 33,
+        PAGEDOWN: 34,
+        INSERT: 45,
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        A: 65,
+        L: 76,
+        P: 80,
+        Q: 81,
+        TILDA: 192
+    },
+    BREAKPOINTS: {
+        XS: 400,
+        SM: 680,
+        MD: 1024,
+        LG: 1200
+    }
+};
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -579,7 +653,7 @@ var FloaterInstances = exports.FloaterInstances = function () {
 var floaterInstances = exports.floaterInstances = new FloaterInstances();
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -590,9 +664,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DomFloaterManager = exports.DomFloater = undefined;
 
-__webpack_require__(4);
+__webpack_require__(5);
 
-var _floater = __webpack_require__(7);
+var _floater = __webpack_require__(8);
 
 var domFloater = _interopRequireWildcard(_floater);
 
@@ -604,13 +678,13 @@ var DomFloater = exports.DomFloater = domFloater;
 var DomFloaterManager = exports.DomFloaterManager = _floaterManager.floaterManager;
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(5);
+var content = __webpack_require__(6);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -635,7 +709,7 @@ if(false) {
 }
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -643,13 +717,13 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "// Utility styles on attributes.\r\n[data-is-initialising=\"true\"] {\r\n   opacity: 0;\r\n }\r\n\r\n[data-is-destructing=\"true\"] {\r\n   opacity: 0;\r\n }", ""]);
+exports.push([module.i, "// Utility styles on attributes.\n[data-is-initialising=\"true\"] {\n   opacity: 0;\n }\n\n[data-is-destructing=\"true\"] {\n   opacity: 0;\n }", ""]);
 
 // exports
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports) {
 
 
@@ -744,7 +818,7 @@ module.exports = function (css) {
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -756,31 +830,24 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _nanoid = __webpack_require__(8);
+__webpack_require__(9);
 
-var nanoid = _interopRequireWildcard(_nanoid);
+var _constants = __webpack_require__(2);
 
-var _requestInterval = __webpack_require__(10);
+var _interfaces = __webpack_require__(11);
 
-var requestInterval = _interopRequireWildcard(_requestInterval);
+var _floaterInstances = __webpack_require__(3);
 
-__webpack_require__(11);
+var _masker = __webpack_require__(12);
 
-var _constants = __webpack_require__(13);
+var _toasterContainer = __webpack_require__(15);
 
-var _interfaces = __webpack_require__(14);
-
-var _floaterInstances = __webpack_require__(2);
-
-var _masker = __webpack_require__(15);
-
-var _toasterContainer = __webpack_require__(18);
-
-var _util = __webpack_require__(21);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+var _util = __webpack_require__(18);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var nanoId = __webpack_require__(19);
+var requestInterval = __webpack_require__(21);
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -796,7 +863,7 @@ var Floater = function () {
         this._popupPositioningInterval = null;
         this._popupPreviousComputedTargetElRect = null;
         // extend config object with uid
-        configuration.guid = nanoid(10);
+        configuration.guid = nanoId();
         this.configuration = configuration;
         // create DOM
         this._hostElement = document.createElement("ARTICLE");
@@ -804,7 +871,13 @@ var Floater = function () {
         this._hostElement.dataset["guid"] = configuration.guid;
         this._hostElement.dataset["isInitialising"] = "true";
         if (configuration.contentElement) {
-            this._hostElement.innerHTML = configuration.contentElement;
+            if (this.configuration.contentElementType === _interfaces.IFloater.ContentElementType.TEMPLATE) {
+                this._hostElement.innerHTML = configuration.contentElement;
+            } else if (this.configuration.contentElementType === _interfaces.IFloater.ContentElementType.NODE) {
+                this._hostElement.insertBefore(configuration.contentElement, this._hostElement.firstChild); // first child is always empty.
+            } else {
+                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE);
+            }
         }
         // add to floater instances
         _floaterInstances.floaterInstances.add(this);
@@ -1053,91 +1126,13 @@ var Floater = function () {
 exports.default = Floater;
 
 /***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var random = __webpack_require__(9)
-
-var url = '_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-/**
- * Generate secure URL-friendly unique ID.
- *
- * By default, ID will have 21 symbols to have a collision probability similar
- * to UUID v4.
- *
- * @param {number} [size=21] The number of symbols in ID.
- *
- * @return {string} Random string.
- *
- * @example
- * var nanoid = require('nanoid')
- * model.id = nanoid() //=> "Uakgb_J5m9g~0JDMbcJqL"
- *
- * @name nanoid
- */
-module.exports = function (size) {
-  size = size || 21
-  var id = ''
-  var bytes = random(size)
-  while (0 < size--) {
-    id += url[bytes[size] & 63]
-  }
-  return id
-}
-
-
-/***/ }),
 /* 9 */
-/***/ (function(module, exports) {
-
-var crypto = window.crypto || window.msCrypto
-
-module.exports = function (bytes) {
-  return crypto.getRandomValues(new Uint8Array(bytes))
-}
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports = module.exports = interval;
-function interval(delay, fn) {
-  var start = Date.now();
-  var data = {};
-  data.id = requestAnimationFrame(loop);
-
-  return data;
-
-  function loop() {
-    data.id = requestAnimationFrame(loop);
-
-    if (Date.now() - start >= delay) {
-      fn();
-      start = Date.now();
-    }
-  }
-}
-
-
-exports.clear = clearInterval;
-function clearInterval(data) {
-  cancelAnimationFrame(data.id);
-}
-
-
-/***/ }),
-/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(12);
+var content = __webpack_require__(10);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -1162,7 +1157,7 @@ if(false) {
 }
 
 /***/ }),
-/* 12 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -1170,86 +1165,13 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  box-sizing: border-box;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%; \r\n    -webkit-transform: translateX(-50%) translateY(-50%); \r\n            transform: translateX(-50%) translateY(-50%);\r\n  }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\n  z-index: 1000;\n  box-sizing: border-box;\n}\n.dom-floater-base.MODAL {\n    position: fixed;\n    left: 50%;\n    top: 50%; \n    -webkit-transform: translateX(-50%) translateY(-50%); \n            transform: translateX(-50%) translateY(-50%);\n  }\n.dom-floater-base.TOAST {\n    position: relative;\n  }\n.dom-floater-base.POPUP {\n    position: fixed;\n  }", ""]);
 
 // exports
 
 
 /***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var CONSTANTS = exports.CONSTANTS = {
-    TIME_SPAN: {
-        MS_50: 50,
-        MS_300: 300
-    },
-    MESSAGES: {
-        ERROR_NO_DOCUMENT_BODY: "No document or html body present.",
-        ERROR_IN_CONFIGURATION_NO_TYPE: "Error in Floater Configuration. No Floater Type provided",
-        ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: "Error in Floater Configuration. No Popup Target Element provided.",
-        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: "Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector."
-    },
-    COMMON_KEY_CODES: {
-        BACKSPACE: 8,
-        RETURN: 13,
-        ESC: 27,
-        SPACE: 32,
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        ZERO: 48,
-        ONE: 49,
-        TWO: 50,
-        a: 65,
-        b: 66,
-        F: 70,
-        k: 75,
-        m: 77,
-        WIN_or_CMD: 91 // to detect cmd on key up use this, on keydown you can use event.metaKey
-    },
-    KEYS: {
-        BACKSPACE: 8,
-        TAB: 9,
-        RETURN: 13,
-        ESC: 27,
-        SPACE: 32,
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        DELETE: 46,
-        HOME: 36,
-        END: 35,
-        PAGEUP: 33,
-        PAGEDOWN: 34,
-        INSERT: 45,
-        ZERO: 48,
-        ONE: 49,
-        TWO: 50,
-        A: 65,
-        L: 76,
-        P: 80,
-        Q: 81,
-        TILDA: 192
-    },
-    BREAKPOINTS: {
-        XS: 400,
-        SM: 680,
-        MD: 1024,
-        LG: 1200
-    }
-};
-
-/***/ }),
-/* 14 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1279,10 +1201,15 @@ var IFloater = exports.IFloater = undefined;
         PopupTriggerOn["CLICK"] = "CLICK";
         PopupTriggerOn["HOVER"] = "HOVER";
     })(PopupTriggerOn = IFloater.PopupTriggerOn || (IFloater.PopupTriggerOn = {}));
+    var ContentElementType = void 0;
+    (function (ContentElementType) {
+        ContentElementType["NODE"] = "NODE";
+        ContentElementType["TEMPLATE"] = "TEMPLATE";
+    })(ContentElementType = IFloater.ContentElementType || (IFloater.ContentElementType = {}));
 })(IFloater || (exports.IFloater = IFloater = {}));
 
 /***/ }),
-/* 15 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1295,7 +1222,7 @@ exports.masker = exports.Masker = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-__webpack_require__(16);
+__webpack_require__(13);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1336,13 +1263,13 @@ var Masker = exports.Masker = function () {
 var masker = exports.masker = new Masker();
 
 /***/ }),
-/* 16 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(17);
+var content = __webpack_require__(14);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -1367,7 +1294,7 @@ if(false) {
 }
 
 /***/ }),
-/* 17 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -1375,13 +1302,13 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 999;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n}", ""]);
+exports.push([module.i, ".dom-masker-base {\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  position: fixed;\n  z-index: 999;\n  background: rgb(0, 0, 0);\n  opacity: 0.3;\n}", ""]);
 
 // exports
 
 
 /***/ }),
-/* 18 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1394,7 +1321,7 @@ exports.toasterContainer = exports.ToasterContainer = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-__webpack_require__(19);
+__webpack_require__(16);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1439,13 +1366,13 @@ var ToasterContainer = exports.ToasterContainer = function () {
 var toasterContainer = exports.toasterContainer = new ToasterContainer();
 
 /***/ }),
-/* 19 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(20);
+var content = __webpack_require__(17);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -1470,7 +1397,7 @@ if(false) {
 }
 
 /***/ }),
-/* 20 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(0)(undefined);
@@ -1478,13 +1405,13 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-toaster-container-base {\r\n  position: fixed;\r\n  top: 0rem;\r\n  left: 50%;\r\n  -webkit-transform: translateX(-50%) translateY(0);\r\n          transform: translateX(-50%) translateY(0);\r\n  z-index: 1001;\r\n}", ""]);
+exports.push([module.i, ".dom-toaster-container-base {\n  position: fixed;\n  top: 0rem;\n  left: 50%;\n  -webkit-transform: translateX(-50%) translateY(0);\n          transform: translateX(-50%) translateY(0);\n  z-index: 1001;\n}", ""]);
 
 // exports
 
 
 /***/ }),
-/* 21 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1495,7 +1422,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.isInView = exports.isElementScrollable = exports.getStyleToHideFloater = exports.getStyleToShowFloater = undefined;
 
-var _constants = __webpack_require__(13);
+var _constants = __webpack_require__(2);
 
 var getStyleToShowFloater = exports.getStyleToShowFloater = function getStyleToShowFloater(x, y) {
     return "left: " + x + "px; top: " + y + "px; visibility: visible; pointer-events: all; opacity: 1.0;";
@@ -1536,6 +1463,84 @@ var isInView = exports.isInView = function isInView(element, containerElement) {
 };
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var random = __webpack_require__(20)
+
+var url = '_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+/**
+ * Generate secure URL-friendly unique ID.
+ *
+ * By default, ID will have 21 symbols to have a collision probability similar
+ * to UUID v4.
+ *
+ * @param {number} [size=21] The number of symbols in ID.
+ *
+ * @return {string} Random string.
+ *
+ * @example
+ * var nanoid = require('nanoid')
+ * model.id = nanoid() //=> "Uakgb_J5m9g~0JDMbcJqL"
+ *
+ * @name nanoid
+ */
+module.exports = function (size) {
+  size = size || 21
+  var id = ''
+  var bytes = random(size)
+  while (0 < size--) {
+    id += url[bytes[size] & 63]
+  }
+  return id
+}
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports) {
+
+var crypto = window.crypto || window.msCrypto
+
+module.exports = function (bytes) {
+  return crypto.getRandomValues(new Uint8Array(bytes))
+}
+
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports = module.exports = interval;
+function interval(delay, fn) {
+  var start = Date.now();
+  var data = {};
+  data.id = requestAnimationFrame(loop);
+
+  return data;
+
+  function loop() {
+    data.id = requestAnimationFrame(loop);
+
+    if (Date.now() - start >= delay) {
+      fn();
+      start = Date.now();
+    }
+  }
+}
+
+
+exports.clear = clearInterval;
+function clearInterval(data) {
+  cancelAnimationFrame(data.id);
+}
+
+
+/***/ }),
 /* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1549,7 +1554,7 @@ exports.floaterManager = exports.FloaterManager = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _floaterInstances = __webpack_require__(2);
+var _floaterInstances = __webpack_require__(3);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 

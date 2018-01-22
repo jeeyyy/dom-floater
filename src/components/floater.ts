@@ -1,5 +1,5 @@
-import * as nanoid from "nanoid";
-import * as requestInterval from "request-interval";
+const nanoId = require('nanoid');
+const requestInterval = require("request-interval");
 import "./floater.pcss";
 import { CONSTANTS } from "./../constants";
 import { IFloater } from "../interfaces";
@@ -30,7 +30,7 @@ export default class Floater implements IFloater.Component {
 
   constructor(configuration: IFloater.Configuration) {
     // extend config object with uid
-    configuration.guid = nanoid(10);
+    configuration.guid = nanoId();
     this.configuration = configuration;
 
     // create DOM
@@ -40,7 +40,14 @@ export default class Floater implements IFloater.Component {
     this._hostElement.dataset["isInitialising"] = "true";
 
     if (configuration.contentElement) {
-      this._hostElement.innerHTML = configuration.contentElement;
+      if (this.configuration.contentElementType === IFloater.ContentElementType.TEMPLATE) {
+        this._hostElement.innerHTML = configuration.contentElement;
+      }
+      else if (this.configuration.contentElementType === IFloater.ContentElementType.NODE) {
+        this._hostElement.insertBefore(configuration.contentElement, this._hostElement.firstChild); // first child is always empty.
+      } else {
+        throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE)
+      }
     }
 
     // add to floater instances
