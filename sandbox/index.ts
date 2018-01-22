@@ -7,9 +7,9 @@ const Floater = dF.DomFloater.default;
 const FloaterManager = dF.DomFloaterManager;
 
 const createFloater = (config) => {
-    
+
     const floater = new Floater(config);
-    floater.show();    
+    floater.show();
     // JUST FOR TESTING
     setTimeout(() => {
         let closeButton = floater.getContentElementWithSelector('close-button');
@@ -68,6 +68,32 @@ document
             </div>`,
             contentElementType: IFloater.ContentElementType.TEMPLATE,
             expiry: 1000
+        };
+        createFloater(config);
+    });
+
+document
+    .getElementById(`createSlideOut`)
+    .addEventListener('click', () => {
+        const value = (document.getElementById('slideOutDiv') as HTMLInputElement).value;
+        const slideOutTargetElement =
+            value.length > 0
+                ? document.getElementById(value)
+                : document.body;
+        const config: IFloater.Configuration = {
+            type: IFloater.Type.SLIDEOUT,
+            contentElement: `
+            <div>
+                Some Toast Content. ${ Math.floor(Math.random() * 100)}
+                <button 
+                    type='button'
+                    class='close-button'
+                    >
+                    Close
+                </button>
+            </div>`,
+            contentElementType: IFloater.ContentElementType.TEMPLATE,
+            slideOutTargetElement: slideOutTargetElement
         };
         createFloater(config);
     });

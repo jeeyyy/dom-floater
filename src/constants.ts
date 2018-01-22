@@ -8,7 +8,8 @@ export const CONSTANTS = {
     ERROR_IN_CONFIGURATION_NO_TYPE: `Error in Floater Configuration. No Floater Type provided`,
     ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE: `Error in Floater Configuration. No Content Element Type provided`,
     ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: `Error in Floater Configuration. No Popup Target Element provided.`,
-    ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: `Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector.`
+    ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: `Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector.`,
+    ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET: `Error in Floater Configuration. No Slide Out Target Element provided.`
   },
   COMMON_KEY_CODES: {
     BACKSPACE: 8,

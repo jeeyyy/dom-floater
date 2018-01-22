@@ -534,7 +534,8 @@ var CONSTANTS = exports.CONSTANTS = {
         ERROR_IN_CONFIGURATION_NO_TYPE: "Error in Floater Configuration. No Floater Type provided",
         ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE: "Error in Floater Configuration. No Content Element Type provided",
         ERROR_IN_CONFIGURATION_NO_POPUP_TARGET: "Error in Floater Configuration. No Popup Target Element provided.",
-        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: "Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector."
+        ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT: "Error in finding scrollable parent with supplied selector. Cannot position and track popup position with out correct parent reference. Kindly check supplied selector.",
+        ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET: "Error in Floater Configuration. No Slide Out Target Element provided."
     },
     COMMON_KEY_CODES: {
         BACKSPACE: 8,
@@ -613,13 +614,13 @@ var FloaterInstances = exports.FloaterInstances = function () {
     _createClass(FloaterInstances, [{
         key: "add",
         value: function add(floater) {
-            this._instances[floater.configuration.guid] = floater;
+            this._instances[floater.getGuid()] = floater;
             console.debug(this._instances);
         }
     }, {
         key: "destroy",
         value: function destroy(floater) {
-            var guid = floater.configuration.guid;
+            var guid = floater.getGuid();
             var floaterInstance = this._instances[guid];
             if (floaterInstance) floaterInstance.destroy();
             delete this._instances[guid];
@@ -639,7 +640,7 @@ var FloaterInstances = exports.FloaterInstances = function () {
             var result = [];
             Object.keys(this._instances).forEach(function (instanceGuid) {
                 var instance = _this.getInstanceById(instanceGuid);
-                if (instance && instance.configuration.type === instanceType) {
+                if (instance && instance.getConfiguration().type === instanceType) {
                     result.push(instance);
                 }
             });
@@ -857,17 +858,17 @@ var Floater = function () {
     function Floater(configuration) {
         _classCallCheck(this, Floater);
 
+        this.configuration = configuration;
         this._destroyBoundWithThis = this.destroy.bind(this);
         this._callbacks = {}; // dynamically constructed object
         this._popupPositioningScrollableParentElement = null;
         this._popupPositioningInterval = null;
         this._popupPreviousComputedTargetElRect = null;
-        // extend config object with uid
+        // extend config object with guid
         configuration.guid = nanoId();
-        this.configuration = configuration;
         // create DOM
         this._hostElement = document.createElement("ARTICLE");
-        this._hostElement.className = "dom-floater-base " + configuration.type;
+        this._hostElement.className = this._getClassName(this.configuration);
         this._hostElement.dataset["guid"] = configuration.guid;
         this._hostElement.dataset["isInitialising"] = "true";
         if (configuration.contentElement) {
@@ -884,6 +885,21 @@ var Floater = function () {
     }
 
     _createClass(Floater, [{
+        key: "_getClassName",
+        value: function _getClassName(config) {
+            var baseClass = "dom-floater-base " + config.type;
+            switch (config.type) {
+                case _interfaces.IFloater.Type.MODAL:
+                    return baseClass + " " + (config.modalMask && 'MASK');
+                case _interfaces.IFloater.Type.TOAST:
+                    return baseClass + " " + (config.toastPosition ? config.toastPosition : '');
+                case _interfaces.IFloater.Type.POPUP:
+                    return "" + baseClass;
+                case _interfaces.IFloater.Type.SLIDEOUT:
+                    return baseClass + " " + (config.slideOutPosition ? config.slideOutPosition : '') + " " + (config.slideOutMask && 'MASK');
+            }
+        }
+    }, {
         key: "show",
         value: function show() {
             var getCurrentInstanceOfType = _floaterInstances.floaterInstances.getInstancesOfType(this.configuration.type);
@@ -900,6 +916,10 @@ var Floater = function () {
                     case _interfaces.IFloater.Type.POPUP:
                         {
                             return this._handleShowPopup(getCurrentInstanceOfType);
+                        }
+                    case _interfaces.IFloater.Type.SLIDEOUT:
+                        {
+                            return this._handleShowSlideOut(getCurrentInstanceOfType);
                         }
                 }
             } else {
@@ -942,6 +962,11 @@ var Floater = function () {
                     resolve();
                 });
             });
+        }
+    }, {
+        key: "getConfiguration",
+        value: function getConfiguration() {
+            return this.configuration;
         }
     }, {
         key: "getGuid",
@@ -1016,7 +1041,7 @@ var Floater = function () {
         key: "_handleShowModal",
         value: function _handleShowModal(getCurrentInstanceOfType) {
             // only init a mask element if this is the first modal that is shown
-            if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+            if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1 && this.configuration.modalMask) {
                 _masker.masker.init();
             }
             // create Modal
@@ -1056,6 +1081,16 @@ var Floater = function () {
                         instance.destroy();
                     }
                 });
+            }
+            this._handleShow();
+        }
+    }, {
+        key: "_handleShowSlideOut",
+        value: function _handleShowSlideOut(getCurrentInstanceOfType) {
+            if (this.configuration.slideOutTargetElement) {
+                this.configuration.slideOutTargetElement.insertBefore(this._hostElement, this.configuration.slideOutTargetElement.firstChild);
+            } else {
+                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET);
             }
             this._handleShow();
         }
@@ -1187,20 +1222,38 @@ var IFloater = exports.IFloater = undefined;
         Type["MODAL"] = "MODAL";
         Type["POPUP"] = "POPUP";
         Type["TOAST"] = "TOAST";
+        Type["SLIDEOUT"] = "SLIDEOUT";
     })(Type = IFloater.Type || (IFloater.Type = {}));
-    var PopupPosition = void 0;
-    (function (PopupPosition) {
-        PopupPosition["TOP"] = "TOP";
-        PopupPosition["BOTTOM"] = "BOTTOM";
-        PopupPosition["LEFT"] = "LEFT";
-        PopupPosition["RIGHT"] = "RIGHT";
-        PopupPosition["AUTO"] = "AUTO";
-    })(PopupPosition = IFloater.PopupPosition || (IFloater.PopupPosition = {}));
+    var ToastPosition = void 0;
+    (function (ToastPosition) {
+        ToastPosition["TOP"] = "TOP";
+        ToastPosition["RIGHT"] = "RIGHT";
+        ToastPosition["BOTTOM"] = "BOTTOM";
+        ToastPosition["LEFT"] = "LEFT";
+        ToastPosition["TOP_RIGHT"] = "TOP_RIGHT";
+        ToastPosition["TOP_LEFT"] = "TOP_LEFT";
+        ToastPosition["BOTTOM_LEFT"] = "BOTTOM_LEFT";
+        ToastPosition["BOTTOM_RIGHT"] = "BOTTOM_RIGHT";
+    })(ToastPosition = IFloater.ToastPosition || (IFloater.ToastPosition = {}));
     var PopupTriggerOn = void 0;
     (function (PopupTriggerOn) {
         PopupTriggerOn["CLICK"] = "CLICK";
-        PopupTriggerOn["HOVER"] = "HOVER";
+        PopupTriggerOn["HOVER"] = "HOVER"; // TODO
     })(PopupTriggerOn = IFloater.PopupTriggerOn || (IFloater.PopupTriggerOn = {}));
+    var PopupPosition = void 0;
+    (function (PopupPosition) {
+        PopupPosition["TOP"] = "TOP";
+        PopupPosition["RIGHT"] = "RIGHT";
+        PopupPosition["BOTTOM"] = "BOTTOM";
+        PopupPosition["LEFT"] = "LEFT";
+    })(PopupPosition = IFloater.PopupPosition || (IFloater.PopupPosition = {}));
+    var SlideOutPosition = void 0;
+    (function (SlideOutPosition) {
+        SlideOutPosition["TOP"] = "TOP";
+        SlideOutPosition["RIGHT"] = "RIGHT";
+        SlideOutPosition["BOTTOM"] = "BOTTOM";
+        SlideOutPosition["LEFT"] = "LEFT";
+    })(SlideOutPosition = IFloater.SlideOutPosition || (IFloater.SlideOutPosition = {}));
     var ContentElementType = void 0;
     (function (ContentElementType) {
         ContentElementType["NODE"] = "NODE";

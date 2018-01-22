@@ -5,12 +5,12 @@ export class FloaterInstances {
   private _instances = {}; // dynamically created objects - key value pairs
 
   add(floater: Floater) {
-    this._instances[floater.configuration.guid] = floater;
+    this._instances[floater.getGuid()] = floater;
     console.debug(this._instances);
   }
 
   destroy(floater: Floater) {
-    const guid = floater.configuration.guid;
+    const guid = floater.getGuid();
     const floaterInstance: Floater = this._instances[guid];
     if (floaterInstance) floaterInstance.destroy();
     delete this._instances[guid];
@@ -26,7 +26,7 @@ export class FloaterInstances {
     let result = [];
     Object.keys(this._instances).forEach((instanceGuid: string) => {
       const instance: Floater = this.getInstanceById(instanceGuid);
-      if (instance && instance.configuration.type === instanceType) {
+      if (instance && instance.getConfiguration().type === instanceType) {
         result.push(instance);
       }
     });

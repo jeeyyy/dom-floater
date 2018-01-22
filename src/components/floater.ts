@@ -18,7 +18,7 @@ import {
  * @constructor
  */
 export default class Floater implements IFloater.Component {
-  configuration: IFloater.Configuration;
+
 
   private _hostElement: HTMLElement;
   private _destroyBoundWithThis = this.destroy.bind(this);
@@ -28,14 +28,27 @@ export default class Floater implements IFloater.Component {
   private _popupPositioningInterval = null;
   private _popupPreviousComputedTargetElRect = null;
 
-  constructor(configuration: IFloater.Configuration) {
-    // extend config object with uid
+  private _getClassName(config: IFloater.Configuration) {
+    let baseClass = `dom-floater-base ${config.type}`
+    switch (config.type) {
+      case IFloater.Type.MODAL:
+        return `${baseClass} ${config.modalMask && 'MASK'}`;
+      case IFloater.Type.TOAST:
+        return `${baseClass} ${config.toastPosition ? config.toastPosition : ''}`;
+      case IFloater.Type.POPUP:
+        return `${baseClass}`;
+      case IFloater.Type.SLIDEOUT:
+        return `${baseClass} ${config.slideOutPosition ? config.slideOutPosition : ''} ${config.slideOutMask && 'MASK'}`;
+    }
+  }
+
+  constructor(private configuration: IFloater.Configuration) {
+    // extend config object with guid
     configuration.guid = nanoId();
-    this.configuration = configuration;
 
     // create DOM
     this._hostElement = document.createElement("ARTICLE");
-    this._hostElement.className = `dom-floater-base ${configuration.type}`;
+    this._hostElement.className = this._getClassName(this.configuration);
     this._hostElement.dataset["guid"] = configuration.guid;
     this._hostElement.dataset["isInitialising"] = "true";
 
@@ -68,6 +81,9 @@ export default class Floater implements IFloater.Component {
         }
         case IFloater.Type.POPUP: {
           return this._handleShowPopup(getCurrentInstanceOfType);
+        }
+        case IFloater.Type.SLIDEOUT: {
+          return this._handleShowSlideOut(getCurrentInstanceOfType);
         }
       }
     } else {
@@ -109,6 +125,10 @@ export default class Floater implements IFloater.Component {
         resolve();
       });
     });
+  }
+
+  getConfiguration(): IFloater.Configuration {
+    return this.configuration;
   }
 
   getGuid(): string {
@@ -182,7 +202,10 @@ export default class Floater implements IFloater.Component {
 
   private _handleShowModal(getCurrentInstanceOfType: Floater[]) {
     // only init a mask element if this is the first modal that is shown
-    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+    if (
+      getCurrentInstanceOfType &&
+      getCurrentInstanceOfType.length <= 1 &&
+      this.configuration.modalMask) {
       masker.init();
     }
     // create Modal
@@ -208,9 +231,7 @@ export default class Floater implements IFloater.Component {
       document.body.appendChild(this._hostElement);
       this._positionPopup();
     } else {
-      throw new Error(
-        CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET
-      );
+      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
     }
     // and delete the previous one
     if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
@@ -220,6 +241,15 @@ export default class Floater implements IFloater.Component {
           instance.destroy();
         }
       });
+    }
+    this._handleShow();
+  }
+
+  private _handleShowSlideOut(getCurrentInstanceOfType: Floater[]) {
+    if (this.configuration.slideOutTargetElement) {
+      this.configuration.slideOutTargetElement.insertBefore(this._hostElement, this.configuration.slideOutTargetElement.firstChild);
+    } else {
+      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET);
     }
     this._handleShow();
   }

@@ -1,21 +1,40 @@
 export namespace IFloater {
+
   export enum Type {
     MODAL = "MODAL",
     POPUP = "POPUP",
-    TOAST = "TOAST"
+    TOAST = "TOAST",
+    SLIDEOUT = "SLIDEOUT"
   }
 
-  export enum PopupPosition {
+  export enum ToastPosition {
     TOP = "TOP",
+    RIGHT = "RIGHT",
     BOTTOM = "BOTTOM",
     LEFT = "LEFT",
-    RIGHT = "RIGHT",
-    AUTO = "AUTO"
+    TOP_RIGHT = "TOP_RIGHT",
+    TOP_LEFT = "TOP_LEFT",
+    BOTTOM_LEFT = "BOTTOM_LEFT",
+    BOTTOM_RIGHT = "BOTTOM_RIGHT"
   }
 
   export enum PopupTriggerOn {
     CLICK = "CLICK",
-    HOVER = "HOVER"
+    HOVER = "HOVER" // TODO
+  }
+
+  export enum PopupPosition {
+    TOP = "TOP",
+    RIGHT = "RIGHT",
+    BOTTOM = "BOTTOM",
+    LEFT = "LEFT"
+  }
+
+  export enum SlideOutPosition {
+    TOP = "TOP",
+    RIGHT = "RIGHT",
+    BOTTOM = "BOTTOM",
+    LEFT = "LEFT"
   }
 
   export enum ContentElementType {
@@ -27,14 +46,20 @@ export namespace IFloater {
     type: Type;
     contentElement: Element | any;
     contentElementType: ContentElementType;
-    // TOAST Properties
+    // MODAL PROPS
+    modalMask?: boolean;
+    // TOAST PROPS
     expiry?: number; // milliseconds
-    // POPUP PROPERTIES
+    toastPosition?: ToastPosition;
+    // POPUP PROPS
     popupTargetElement?: HTMLElement;
-    popupPosition?: PopupPosition;
     popupTriggerOn?: PopupTriggerOn;
     popupIsScrollableParentSelector?: string;
-    // INTERNAL PROPERTIES
+    // SLIDEOUT PROPS
+    slideOutTargetElement?: HTMLElement;
+    slideOutPosition?: SlideOutPosition;
+    slideOutMask?: boolean;
+    // INTERNAL PROPS
     guid?: string;
   }
 
@@ -42,6 +67,7 @@ export namespace IFloater {
     show(configuration: IFloater.Configuration): Promise<void> | void;
     destroy(): Promise<void>;
     getGuid(): string;
+    getConfiguration(): IFloater.Configuration;
     getContentElementWithSelector(selector: string): Element;
     getFloaterElementFromChild(contentChildElement: Element): Element;
   }
