@@ -99,7 +99,7 @@ export default class Floater implements IFloater.Component {
         const doesMaskAlreadyExist = floaterInstances.getInstancesOfType(
           IFloater.Type.MODAL
         );
-        if (doesMaskAlreadyExist.length <= 1) {
+        if (doesMaskAlreadyExist.length <= 1 && this.configuration.modalMask) {
           masker.destroy();
         }
         break;

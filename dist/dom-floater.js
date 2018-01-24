@@ -936,7 +936,7 @@ var Floater = function () {
             switch (this.configuration.type) {
                 case _interfaces.IFloater.Type.MODAL:
                     var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
-                    if (doesMaskAlreadyExist.length <= 1) {
+                    if (doesMaskAlreadyExist.length <= 1 && this.configuration.modalMask) {
                         _masker.masker.destroy();
                     }
                     break;
