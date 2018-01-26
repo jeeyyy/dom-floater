@@ -5,19 +5,19 @@ import { IFloater } from "../interfaces";
  * @constructor
  */
 export default class Floater implements IFloater.Component {
-    configuration: IFloater.Configuration;
+    private configuration;
     private _hostElement;
     private _destroyBoundWithThis;
     private _callbacks;
-    private _popupPositioningScrollableParentElement;
-    private _popupPositioningInterval;
-    private _popupPreviousComputedTargetElRect;
+    private _dynamicRefs;
     constructor(configuration: IFloater.Configuration);
     show(): Promise<void> | void;
     destroy(): Promise<any>;
+    getConfiguration(): IFloater.Configuration;
     getGuid(): string;
     getContentElementWithSelector(selector: string): Element;
     getFloaterElementFromChild(contentChildElement: Element): Element;
+    private _getClassName(config);
     private _getFloaterParentWithSelector(startEl, selector);
     private _destructOnExpiry(expiryDurtaion);
     private _destructOnEscape();
@@ -25,6 +25,7 @@ export default class Floater implements IFloater.Component {
     private _handleShowModal(getCurrentInstanceOfType);
     private _handleShowToast(getCurrentInstanceOfType);
     private _handleShowPopup(getCurrentInstanceOfType);
+    private _handleShowSlideOut(getCurrentInstanceOfType);
     private _handleShow();
     private _positionPopup();
     private _computePosition();

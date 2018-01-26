@@ -24,23 +24,18 @@ export default class Floater implements IFloater.Component {
   private _destroyBoundWithThis = this.destroy.bind(this);
   private _callbacks = {}; // dynamically constructed object
 
-  private _popupPositioningScrollableParentElement = null;
-  private _popupPositioningInterval = null;
-  private _popupPreviousComputedTargetElRect = null;
-
-  private _getClassName(config: IFloater.Configuration) {
-    let baseClass = `dom-floater-base ${config.type}`
-    switch (config.type) {
-      case IFloater.Type.MODAL:
-        return `${baseClass} ${config.modalMask && 'MASK'}`;
-      case IFloater.Type.TOAST:
-        return `${baseClass} ${config.toastPosition ? config.toastPosition : ''}`;
-      case IFloater.Type.POPUP:
-        return `${baseClass}`;
-      case IFloater.Type.SLIDEOUT:
-        return `${baseClass} ${config.slideOutPosition ? config.slideOutPosition : ''} ${config.slideOutMask && 'MASK'}`;
+  private _dynamicRefs = {
+    CONTENT_ELEMENT_WHEN_NODE_PROPS: {
+      PARENT_REF: null,
+      SIBLING_REF: null,
+      IS_LAST_CHILD: null
+    },
+    POPUP_PROPS: {
+      SCROLLABLE_PARENT_REF: null,
+      POSITION_INTERVAL: null,
+      PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
     }
-  }
+  };
 
   constructor(private configuration: IFloater.Configuration) {
     // extend config object with guid
@@ -57,6 +52,16 @@ export default class Floater implements IFloater.Component {
         this._hostElement.innerHTML = configuration.contentElement;
       }
       else if (this.configuration.contentElementType === IFloater.ContentElementType.NODE) {
+        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF =
+          configuration.contentElement.parentElement;
+        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF =
+          configuration.contentElement.nextElementSibling
+            ? configuration.contentElement.nextElementSibling
+            : configuration.contentElement.previousElementSibling;
+        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD =
+          configuration.contentElement.nextElementSibling
+            ? false
+            : true;
         this._hostElement.insertBefore(configuration.contentElement, this._hostElement.firstChild); // first child is always empty.
       } else {
         throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE)
@@ -94,6 +99,20 @@ export default class Floater implements IFloater.Component {
   destroy(): Promise<any> {
     // visual indicator for this element and delegate to the modal
     this._hostElement.dataset["isDestructing"] = "true";
+
+    if (this.configuration.contentElement) {
+      if (this.configuration.contentElementType === IFloater.ContentElementType.NODE) {
+        if (this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF) {
+
+          this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF
+            .insertBefore(this.configuration.contentElement,
+            !this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD
+              ? this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF
+              : this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF.nextSibling);
+        }
+      }
+    }
+
     switch (this.configuration.type) {
       case IFloater.Type.MODAL:
         const doesMaskAlreadyExist = floaterInstances.getInstancesOfType(
@@ -106,14 +125,13 @@ export default class Floater implements IFloater.Component {
       case IFloater.Type.TOAST:
         break;
       case IFloater.Type.POPUP:
-        if (this._popupPositioningInterval) {
-          requestInterval.clear(this._popupPositioningInterval);
-          this._popupPositioningInterval = null;
+        if (this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
+          requestInterval.clear(this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL);
         }
-        this._popupPositioningScrollableParentElement = null;
-        this._popupPreviousComputedTargetElRect = null;
         break;
     }
+
+    this._dynamicRefs = null;
     return new Promise(resolve => {
       requestAnimationFrame(() => {
         // remove floater instance management
@@ -153,6 +171,22 @@ export default class Floater implements IFloater.Component {
     }
     return null;
   }
+
+
+  private _getClassName(config: IFloater.Configuration) {
+    let baseClass = `dom-floater-base ${config.type}`
+    switch (config.type) {
+      case IFloater.Type.MODAL:
+        return `${baseClass} ${config.modalMask ? config.modalMask : 'MASK'}`;
+      case IFloater.Type.TOAST:
+        return `${baseClass} ${config.toastPosition ? config.toastPosition : ''}`;
+      case IFloater.Type.POPUP:
+        return `${baseClass}`;
+      case IFloater.Type.SLIDEOUT:
+        return `${baseClass} ${config.slideOutPosition ? config.slideOutPosition : ''} ${config.slideOutMask ? config.slideOutMask : 'MASK'}`;
+    }
+  }
+
 
   private _getFloaterParentWithSelector(
     startEl: HTMLElement,
@@ -273,12 +307,10 @@ export default class Floater implements IFloater.Component {
   private _positionPopup() {
     if (this.configuration.popupIsScrollableParentSelector) {
       // if a scrollable parent's selector is provided - get the parent scrollable element
-      this._popupPositioningInterval = requestInterval(
-        CONSTANTS.TIME_SPAN.MS_50,
-        () => {
+      this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL =
+        requestInterval(CONSTANTS.TIME_SPAN.MS_50, () => {
           this._computePosition();
-        }
-      );
+        });
       this._computePosition();
     } else {
       // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
@@ -291,25 +323,18 @@ export default class Floater implements IFloater.Component {
   }
 
   private _computePosition() {
-    this._popupPositioningScrollableParentElement = this
-      ._popupPositioningScrollableParentElement
-      ? this._popupPositioningScrollableParentElement
-      : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
-    if (this._popupPositioningScrollableParentElement) {
-      const parentOverflow = isElementScrollable(
-        this._popupPositioningScrollableParentElement
-      );
+    this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF =
+      this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+        ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+        : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
+
+    if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+      const parentOverflow = isElementScrollable(this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
       if (parentOverflow.x || parentOverflow.y) {
         // there is an overflow/ scroll in one of the directions
-        const inView = isInView(
-          this.configuration.popupTargetElement,
-          this._popupPositioningScrollableParentElement
-        );
+        const inView = isInView(this.configuration.popupTargetElement, this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
         if (inView.isInView) {
-          if (
-            JSON.stringify(this._popupPreviousComputedTargetElRect) !==
-            JSON.stringify(inView.elementRect)
-          ) {
+          if (JSON.stringify(this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
             this._hostElement.setAttribute(
               "style",
               getStyleToShowFloater(
@@ -317,11 +342,11 @@ export default class Floater implements IFloater.Component {
                 inView.elementRect.top
               )
             );
-            this._popupPreviousComputedTargetElRect = inView.elementRect;
+            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
           }
         } else {
           this._hostElement.setAttribute("style", getStyleToHideFloater());
-          this._popupPreviousComputedTargetElRect = inView.elementRect;
+          this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
         }
       }
     } else {

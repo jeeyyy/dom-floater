@@ -3,17 +3,33 @@ export declare namespace IFloater {
         MODAL = "MODAL",
         POPUP = "POPUP",
         TOAST = "TOAST",
+        SLIDEOUT = "SLIDEOUT",
     }
-    enum PopupPosition {
+    enum ToastPosition {
         TOP = "TOP",
+        RIGHT = "RIGHT",
         BOTTOM = "BOTTOM",
         LEFT = "LEFT",
-        RIGHT = "RIGHT",
-        AUTO = "AUTO",
+        TOP_RIGHT = "TOP_RIGHT",
+        TOP_LEFT = "TOP_LEFT",
+        BOTTOM_LEFT = "BOTTOM_LEFT",
+        BOTTOM_RIGHT = "BOTTOM_RIGHT",
     }
     enum PopupTriggerOn {
         CLICK = "CLICK",
         HOVER = "HOVER",
+    }
+    enum PopupPosition {
+        TOP = "TOP",
+        RIGHT = "RIGHT",
+        BOTTOM = "BOTTOM",
+        LEFT = "LEFT",
+    }
+    enum SlideOutPosition {
+        TOP = "TOP",
+        RIGHT = "RIGHT",
+        BOTTOM = "BOTTOM",
+        LEFT = "LEFT",
     }
     enum ContentElementType {
         NODE = "NODE",
@@ -23,17 +39,22 @@ export declare namespace IFloater {
         type: Type;
         contentElement: Element | any;
         contentElementType: ContentElementType;
+        modalMask?: boolean;
         expiry?: number;
+        toastPosition?: ToastPosition;
         popupTargetElement?: HTMLElement;
-        popupPosition?: PopupPosition;
         popupTriggerOn?: PopupTriggerOn;
         popupIsScrollableParentSelector?: string;
+        slideOutTargetElement?: HTMLElement;
+        slideOutPosition?: SlideOutPosition;
+        slideOutMask?: boolean;
         guid?: string;
     }
     interface Component {
         show(configuration: IFloater.Configuration): Promise<void> | void;
         destroy(): Promise<void>;
         getGuid(): string;
+        getConfiguration(): IFloater.Configuration;
         getContentElementWithSelector(selector: string): Element;
         getFloaterElementFromChild(contentChildElement: Element): Element;
     }

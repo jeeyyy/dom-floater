@@ -718,7 +718,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "// Utility styles on attributes.\n[data-is-initialising=\"true\"] {\n   opacity: 0;\n }\n\n[data-is-destructing=\"true\"] {\n   opacity: 0;\n }", ""]);
+exports.push([module.i, "// Utility styles on attributes.\r\n[data-is-initialising=\"true\"] {\r\n   opacity: 0;\r\n }\r\n\r\n[data-is-destructing=\"true\"] {\r\n   opacity: 0;\r\n }", ""]);
 
 // exports
 
@@ -861,9 +861,18 @@ var Floater = function () {
         this.configuration = configuration;
         this._destroyBoundWithThis = this.destroy.bind(this);
         this._callbacks = {}; // dynamically constructed object
-        this._popupPositioningScrollableParentElement = null;
-        this._popupPositioningInterval = null;
-        this._popupPreviousComputedTargetElRect = null;
+        this._dynamicRefs = {
+            CONTENT_ELEMENT_WHEN_NODE_PROPS: {
+                PARENT_REF: null,
+                SIBLING_REF: null,
+                IS_LAST_CHILD: null
+            },
+            POPUP_PROPS: {
+                SCROLLABLE_PARENT_REF: null,
+                POSITION_INTERVAL: null,
+                PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
+            }
+        };
         // extend config object with guid
         configuration.guid = nanoId();
         // create DOM
@@ -875,6 +884,9 @@ var Floater = function () {
             if (this.configuration.contentElementType === _interfaces.IFloater.ContentElementType.TEMPLATE) {
                 this._hostElement.innerHTML = configuration.contentElement;
             } else if (this.configuration.contentElementType === _interfaces.IFloater.ContentElementType.NODE) {
+                this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF = configuration.contentElement.parentElement;
+                this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF = configuration.contentElement.nextElementSibling ? configuration.contentElement.nextElementSibling : configuration.contentElement.previousElementSibling;
+                this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD = configuration.contentElement.nextElementSibling ? false : true;
                 this._hostElement.insertBefore(configuration.contentElement, this._hostElement.firstChild); // first child is always empty.
             } else {
                 throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE);
@@ -885,21 +897,6 @@ var Floater = function () {
     }
 
     _createClass(Floater, [{
-        key: "_getClassName",
-        value: function _getClassName(config) {
-            var baseClass = "dom-floater-base " + config.type;
-            switch (config.type) {
-                case _interfaces.IFloater.Type.MODAL:
-                    return baseClass + " " + (config.modalMask && 'MASK');
-                case _interfaces.IFloater.Type.TOAST:
-                    return baseClass + " " + (config.toastPosition ? config.toastPosition : '');
-                case _interfaces.IFloater.Type.POPUP:
-                    return "" + baseClass;
-                case _interfaces.IFloater.Type.SLIDEOUT:
-                    return baseClass + " " + (config.slideOutPosition ? config.slideOutPosition : '') + " " + (config.slideOutMask && 'MASK');
-            }
-        }
-    }, {
         key: "show",
         value: function show() {
             var getCurrentInstanceOfType = _floaterInstances.floaterInstances.getInstancesOfType(this.configuration.type);
@@ -933,6 +930,13 @@ var Floater = function () {
 
             // visual indicator for this element and delegate to the modal
             this._hostElement.dataset["isDestructing"] = "true";
+            if (this.configuration.contentElement) {
+                if (this.configuration.contentElementType === _interfaces.IFloater.ContentElementType.NODE) {
+                    if (this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF) {
+                        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF.insertBefore(this.configuration.contentElement, !this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD ? this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF : this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF.nextSibling);
+                    }
+                }
+            }
             switch (this.configuration.type) {
                 case _interfaces.IFloater.Type.MODAL:
                     var doesMaskAlreadyExist = _floaterInstances.floaterInstances.getInstancesOfType(_interfaces.IFloater.Type.MODAL);
@@ -943,14 +947,12 @@ var Floater = function () {
                 case _interfaces.IFloater.Type.TOAST:
                     break;
                 case _interfaces.IFloater.Type.POPUP:
-                    if (this._popupPositioningInterval) {
-                        requestInterval.clear(this._popupPositioningInterval);
-                        this._popupPositioningInterval = null;
+                    if (this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
+                        requestInterval.clear(this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL);
                     }
-                    this._popupPositioningScrollableParentElement = null;
-                    this._popupPreviousComputedTargetElRect = null;
                     break;
             }
+            this._dynamicRefs = null;
             return new Promise(function (resolve) {
                 requestAnimationFrame(function () {
                     // remove floater instance management
@@ -988,6 +990,21 @@ var Floater = function () {
                 }
             }
             return null;
+        }
+    }, {
+        key: "_getClassName",
+        value: function _getClassName(config) {
+            var baseClass = "dom-floater-base " + config.type;
+            switch (config.type) {
+                case _interfaces.IFloater.Type.MODAL:
+                    return baseClass + " " + (config.modalMask ? config.modalMask : 'MASK');
+                case _interfaces.IFloater.Type.TOAST:
+                    return baseClass + " " + (config.toastPosition ? config.toastPosition : '');
+                case _interfaces.IFloater.Type.POPUP:
+                    return "" + baseClass;
+                case _interfaces.IFloater.Type.SLIDEOUT:
+                    return baseClass + " " + (config.slideOutPosition ? config.slideOutPosition : '') + " " + (config.slideOutMask ? config.slideOutMask : 'MASK');
+            }
         }
     }, {
         key: "_getFloaterParentWithSelector",
@@ -1120,7 +1137,7 @@ var Floater = function () {
 
             if (this.configuration.popupIsScrollableParentSelector) {
                 // if a scrollable parent's selector is provided - get the parent scrollable element
-                this._popupPositioningInterval = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
+                this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
                     _this7._computePosition();
                 });
                 this._computePosition();
@@ -1133,20 +1150,20 @@ var Floater = function () {
     }, {
         key: "_computePosition",
         value: function _computePosition() {
-            this._popupPositioningScrollableParentElement = this._popupPositioningScrollableParentElement ? this._popupPositioningScrollableParentElement : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
-            if (this._popupPositioningScrollableParentElement) {
-                var parentOverflow = (0, _util.isElementScrollable)(this._popupPositioningScrollableParentElement);
+            this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
+            if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+                var parentOverflow = (0, _util.isElementScrollable)(this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
                 if (parentOverflow.x || parentOverflow.y) {
                     // there is an overflow/ scroll in one of the directions
-                    var inView = (0, _util.isInView)(this.configuration.popupTargetElement, this._popupPositioningScrollableParentElement);
+                    var inView = (0, _util.isInView)(this.configuration.popupTargetElement, this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
                     if (inView.isInView) {
-                        if (JSON.stringify(this._popupPreviousComputedTargetElRect) !== JSON.stringify(inView.elementRect)) {
+                        if (JSON.stringify(this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
                             this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(inView.elementRect.right, inView.elementRect.top));
-                            this._popupPreviousComputedTargetElRect = inView.elementRect;
+                            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
                         }
                     } else {
                         this._hostElement.setAttribute("style", (0, _util.getStyleToHideFloater)());
-                        this._popupPreviousComputedTargetElRect = inView.elementRect;
+                        this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
                     }
                 }
             } else {
@@ -1200,7 +1217,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\n  z-index: 1000;\n  box-sizing: border-box;\n}\n.dom-floater-base.MODAL {\n    position: fixed;\n    left: 50%;\n    top: 50%; \n    -webkit-transform: translateX(-50%) translateY(-50%); \n            transform: translateX(-50%) translateY(-50%);\n  }\n.dom-floater-base.TOAST {\n    position: relative;\n  }\n.dom-floater-base.POPUP {\n    position: fixed;\n  }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  box-sizing: border-box;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%; \r\n    -webkit-transform: translateX(-50%) translateY(-50%); \r\n            transform: translateX(-50%) translateY(-50%);\r\n  }\n.dom-floater-base.MODAL.MASK {      \r\n    }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
 
 // exports
 
@@ -1355,7 +1372,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-masker-base {\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  position: fixed;\n  z-index: 999;\n  background: rgb(0, 0, 0);\n  opacity: 0.3;\n}", ""]);
+exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 999;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n}", ""]);
 
 // exports
 
@@ -1458,7 +1475,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-toaster-container-base {\n  position: fixed;\n  top: 0rem;\n  left: 50%;\n  -webkit-transform: translateX(-50%) translateY(0);\n          transform: translateX(-50%) translateY(0);\n  z-index: 1001;\n}", ""]);
+exports.push([module.i, ".dom-toaster-container-base {\r\n  position: fixed;\r\n  top: 0rem;\r\n  left: 50%;\r\n  -webkit-transform: translateX(-50%) translateY(0);\r\n          transform: translateX(-50%) translateY(0);\r\n  z-index: 1001;\r\n}", ""]);
 
 // exports
 
