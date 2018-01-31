@@ -1,6 +1,6 @@
 // import * as DomFloater from '../dist/dom-floater.js';
-// import * as dF from '../src/index';
-import * as dF from '../dist/dom-floater';
+import * as dF from '../src/index';
+// import * as dF from '../dist/dom-floater';
 import { IFloater } from '../src/interfaces';
 
 const Floater = dF.DomFloater.default;

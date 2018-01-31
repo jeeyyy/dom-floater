@@ -6,7 +6,6 @@ export class FloaterInstances {
 
   add(floater: Floater) {
     this._instances[floater.getGuid()] = floater;
-    console.debug(this._instances);
   }
 
   destroy(floater: Floater) {
@@ -14,7 +13,6 @@ export class FloaterInstances {
     const floaterInstance: Floater = this._instances[guid];
     if (floaterInstance) floaterInstance.destroy();
     delete this._instances[guid];
-    console.debug(this._instances);
   }
 
   getInstanceById(guid: string): Floater {

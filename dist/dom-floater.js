@@ -615,7 +615,6 @@ var FloaterInstances = exports.FloaterInstances = function () {
         key: "add",
         value: function add(floater) {
             this._instances[floater.getGuid()] = floater;
-            console.debug(this._instances);
         }
     }, {
         key: "destroy",
@@ -624,7 +623,6 @@ var FloaterInstances = exports.FloaterInstances = function () {
             var floaterInstance = this._instances[guid];
             if (floaterInstance) floaterInstance.destroy();
             delete this._instances[guid];
-            console.debug(this._instances);
         }
     }, {
         key: "getInstanceById",
@@ -856,10 +854,11 @@ var requestInterval = __webpack_require__(21);
  */
 var Floater = function () {
     function Floater(configuration) {
+        var _this = this;
+
         _classCallCheck(this, Floater);
 
         this.configuration = configuration;
-        this._destroyBoundWithThis = this.destroy.bind(this);
         this._callbacks = {}; // dynamically constructed object
         this._dynamicRefs = {
             CONTENT_ELEMENT_WHEN_NODE_PROPS: {
@@ -873,11 +872,166 @@ var Floater = function () {
                 PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
             }
         };
+        this.HELPER_FUNCTIONS = {
+            getClassName: function getClassName(config) {
+                var baseClass = "dom-floater-base " + config.type;
+                switch (config.type) {
+                    case _interfaces.IFloater.Type.MODAL:
+                        return baseClass + " " + (config.modalMask ? config.modalMask : "MASK");
+                    case _interfaces.IFloater.Type.TOAST:
+                        return baseClass + " " + (config.toastPosition ? config.toastPosition : "");
+                    case _interfaces.IFloater.Type.POPUP:
+                        return "" + baseClass;
+                    case _interfaces.IFloater.Type.SLIDEOUT:
+                        return baseClass + " " + (config.slideOutPosition ? config.slideOutPosition : "") + " " + (config.slideOutMask ? config.slideOutMask : "MASK");
+                }
+            },
+            getFloaterParentWithSelector: function getFloaterParentWithSelector(startEl, selector) {
+                while (startEl.parentNode) {
+                    startEl = startEl.parentNode;
+                    if (startEl && startEl.classList && startEl.classList.length && startEl.classList.contains(selector)) {
+                        return startEl;
+                    }
+                }
+                return null;
+            },
+            destructOnExpiry: function destructOnExpiry(expiryDurtaion) {
+                var timer = void 0;
+                return function () {
+                    clearTimeout(timer); // be sure to clear if object exists.
+                    timer = setTimeout(function () {
+                        _this.destroy();
+                        clearTimeout(timer);
+                    }, expiryDurtaion);
+                };
+            },
+            handlerForDestructOnEscape: function handlerForDestructOnEscape(event) {
+                if (event.keyCode === _constants.CONSTANTS.COMMON_KEY_CODES.ESC) {
+                    _this.destroy();
+                }
+            },
+            handlerForDestructOnDocumentClick: function handlerForDestructOnDocumentClick(event) {
+                var isChildElement = _this.getFloaterElementFromChild(event.srcElement);
+                if (isChildElement === null) {
+                    _this.destroy();
+                }
+            },
+            destructOnEscape: function destructOnEscape(registerEvent) {
+                if (registerEvent) {
+                    document.addEventListener("keyup", _this.HELPER_FUNCTIONS.handlerForDestructOnEscape);
+                } else {
+                    document.removeEventListener("keyup", _this.HELPER_FUNCTIONS.handlerForDestructOnEscape);
+                }
+            },
+            destructOnDocumentClick: function destructOnDocumentClick(registerEvent) {
+                if (registerEvent) {
+                    document.addEventListener("click", _this.HELPER_FUNCTIONS.handlerForDestructOnDocumentClick);
+                } else {
+                    document.removeEventListener("click", _this.HELPER_FUNCTIONS.handlerForDestructOnDocumentClick);
+                }
+            },
+            handleShowModal: function handleShowModal(getCurrentInstanceOfType) {
+                // only init a mask element if this is the first modal that is shown
+                if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1 && _this.configuration.modalMask) {
+                    _masker.masker.init();
+                }
+                // create Modal
+                document.body.appendChild(_this._hostElement);
+                _this.HELPER_FUNCTIONS.handleShow();
+            },
+            handleShowToast: function handleShowToast(getCurrentInstanceOfType) {
+                // only init a toast container element if does not exist
+                if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+                    _toasterContainer.toasterContainer.init();
+                }
+                _toasterContainer.toasterContainer.add(_this._hostElement);
+                // if has expiry - start destruction timer
+                if (_this.configuration.expiry) {
+                    _this.HELPER_FUNCTIONS.destructOnExpiry(_this.configuration.expiry)();
+                }
+                _this.HELPER_FUNCTIONS.handleShow();
+            },
+            handleShowPopup: function handleShowPopup(getCurrentInstanceOfType) {
+                if (_this.configuration.popupTargetElement) {
+                    document.body.appendChild(_this._hostElement);
+                    _this.HELPER_FUNCTIONS.positionPopup();
+                } else {
+                    throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
+                }
+                // and delete the previous one
+                if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
+                    // dispose old one
+                    getCurrentInstanceOfType.forEach(function (instance) {
+                        if (instance.configuration.guid !== _this.configuration.guid) {
+                            instance.destroy();
+                        }
+                    });
+                }
+                _this.HELPER_FUNCTIONS.handleShow();
+            },
+            handleShowSlideOut: function handleShowSlideOut(getCurrentInstanceOfType) {
+                if (_this.configuration.slideOutTargetElement) {
+                    _this.configuration.slideOutTargetElement.insertBefore(_this._hostElement, _this.configuration.slideOutTargetElement.firstChild);
+                } else {
+                    throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET);
+                }
+                _this.HELPER_FUNCTIONS.handleShow();
+            },
+            handleShow: function handleShow() {
+                return new Promise(function (resolve, reject) {
+                    requestAnimationFrame(function () {
+                        // the time out waits for the css kicks in.
+                        _this._hostElement.dataset["isInitialising"] = "false";
+                    });
+                    requestAnimationFrame(function () {
+                        if (_this.configuration.type === _interfaces.IFloater.Type.POPUP) {
+                            _this.HELPER_FUNCTIONS.destructOnEscape(true);
+                            _this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+                        }
+                        resolve();
+                    });
+                });
+            },
+            positionPopup: function positionPopup() {
+                if (_this.configuration.popupIsScrollableParentSelector) {
+                    // if a scrollable parent's selector is provided - get the parent scrollable element
+                    _this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
+                        _this.HELPER_FUNCTIONS.computePosition();
+                    });
+                    _this.HELPER_FUNCTIONS.computePosition();
+                } else {
+                    // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
+                    var targetElRect = _this.configuration.popupTargetElement.getBoundingClientRect();
+                    _this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(targetElRect.right, targetElRect.top));
+                }
+            },
+            computePosition: function computePosition() {
+                _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF ? _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF : _this.HELPER_FUNCTIONS.getFloaterParentWithSelector(_this.configuration.popupTargetElement, _this.configuration.popupIsScrollableParentSelector);
+                if (_this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+                    var parentOverflow = (0, _util.isElementScrollable)(_this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
+                    if (parentOverflow.x || parentOverflow.y) {
+                        // there is an overflow/ scroll in one of the directions
+                        var inView = (0, _util.isInView)(_this.configuration.popupTargetElement, _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
+                        if (inView.isInView) {
+                            if (JSON.stringify(_this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
+                                _this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(inView.elementRect.right, inView.elementRect.top));
+                                _this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
+                            }
+                        } else {
+                            _this._hostElement.setAttribute("style", (0, _util.getStyleToHideFloater)());
+                            _this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
+                        }
+                    }
+                } else {
+                    throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
+                }
+            }
+        };
         // extend config object with guid
         configuration.guid = nanoId();
         // create DOM
         this._hostElement = document.createElement("ARTICLE");
-        this._hostElement.className = this._getClassName(this.configuration);
+        this._hostElement.className = this.HELPER_FUNCTIONS.getClassName(this.configuration);
         this._hostElement.dataset["guid"] = configuration.guid;
         this._hostElement.dataset["isInitialising"] = "true";
         if (configuration.contentElement) {
@@ -904,19 +1058,19 @@ var Floater = function () {
                 switch (this.configuration.type) {
                     case _interfaces.IFloater.Type.MODAL:
                         {
-                            return this._handleShowModal(getCurrentInstanceOfType);
+                            return this.HELPER_FUNCTIONS.handleShowModal(getCurrentInstanceOfType);
                         }
                     case _interfaces.IFloater.Type.TOAST:
                         {
-                            return this._handleShowToast(getCurrentInstanceOfType);
+                            return this.HELPER_FUNCTIONS.handleShowToast(getCurrentInstanceOfType);
                         }
                     case _interfaces.IFloater.Type.POPUP:
                         {
-                            return this._handleShowPopup(getCurrentInstanceOfType);
+                            return this.HELPER_FUNCTIONS.handleShowPopup(getCurrentInstanceOfType);
                         }
                     case _interfaces.IFloater.Type.SLIDEOUT:
                         {
-                            return this._handleShowSlideOut(getCurrentInstanceOfType);
+                            return this.HELPER_FUNCTIONS.handleShowSlideOut(getCurrentInstanceOfType);
                         }
                 }
             } else {
@@ -926,7 +1080,7 @@ var Floater = function () {
     }, {
         key: "destroy",
         value: function destroy() {
-            var _this = this;
+            var _this2 = this;
 
             // visual indicator for this element and delegate to the modal
             this._hostElement.dataset["isDestructing"] = "true";
@@ -947,19 +1101,20 @@ var Floater = function () {
                 case _interfaces.IFloater.Type.TOAST:
                     break;
                 case _interfaces.IFloater.Type.POPUP:
-                    if (this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
+                    if (this._dynamicRefs && this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
                         requestInterval.clear(this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL);
                     }
+                    this.HELPER_FUNCTIONS.destructOnDocumentClick(false);
                     break;
             }
             this._dynamicRefs = null;
             return new Promise(function (resolve) {
                 requestAnimationFrame(function () {
                     // remove floater instance management
-                    _floaterInstances.floaterInstances.destroy(_this);
+                    _floaterInstances.floaterInstances.destroy(_this2);
                     // remove from DOM
-                    if (_this._hostElement.parentElement) {
-                        _this._hostElement.parentElement.removeChild(_this._hostElement);
+                    if (_this2._hostElement.parentElement) {
+                        _this2._hostElement.parentElement.removeChild(_this2._hostElement);
                     }
                     resolve();
                 });
@@ -990,185 +1145,6 @@ var Floater = function () {
                 }
             }
             return null;
-        }
-    }, {
-        key: "_getClassName",
-        value: function _getClassName(config) {
-            var baseClass = "dom-floater-base " + config.type;
-            switch (config.type) {
-                case _interfaces.IFloater.Type.MODAL:
-                    return baseClass + " " + (config.modalMask ? config.modalMask : 'MASK');
-                case _interfaces.IFloater.Type.TOAST:
-                    return baseClass + " " + (config.toastPosition ? config.toastPosition : '');
-                case _interfaces.IFloater.Type.POPUP:
-                    return "" + baseClass;
-                case _interfaces.IFloater.Type.SLIDEOUT:
-                    return baseClass + " " + (config.slideOutPosition ? config.slideOutPosition : '') + " " + (config.slideOutMask ? config.slideOutMask : 'MASK');
-            }
-        }
-    }, {
-        key: "_getFloaterParentWithSelector",
-        value: function _getFloaterParentWithSelector(startEl, selector) {
-            while (startEl.parentNode) {
-                startEl = startEl.parentNode;
-                if (startEl && startEl.classList && startEl.classList.length && startEl.classList.contains(selector)) {
-                    return startEl;
-                }
-            }
-            return null;
-        }
-    }, {
-        key: "_destructOnExpiry",
-        value: function _destructOnExpiry(expiryDurtaion) {
-            var _this2 = this;
-
-            var timer = void 0;
-            return function () {
-                clearTimeout(timer); // be sure to clear if object exists.
-                timer = setTimeout(function () {
-                    _this2._destroyBoundWithThis();
-                    clearTimeout(timer);
-                }, expiryDurtaion);
-            };
-        }
-    }, {
-        key: "_destructOnEscape",
-        value: function _destructOnEscape() {
-            var _this3 = this;
-
-            document.addEventListener("keyup", function (event) {
-                if (event.keyCode === _constants.CONSTANTS.COMMON_KEY_CODES.ESC) {
-                    _this3._destroyBoundWithThis();
-                }
-            });
-        }
-    }, {
-        key: "_destructOnDocumentClick",
-        value: function _destructOnDocumentClick() {
-            var _this4 = this;
-
-            document.addEventListener("click", function (event) {
-                var isChildElement = _this4.getFloaterElementFromChild(event.srcElement);
-                if (isChildElement === null) {
-                    _this4._destroyBoundWithThis();
-                }
-            });
-        }
-    }, {
-        key: "_handleShowModal",
-        value: function _handleShowModal(getCurrentInstanceOfType) {
-            // only init a mask element if this is the first modal that is shown
-            if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1 && this.configuration.modalMask) {
-                _masker.masker.init();
-            }
-            // create Modal
-            document.body.appendChild(this._hostElement);
-            this._handleShow();
-        }
-    }, {
-        key: "_handleShowToast",
-        value: function _handleShowToast(getCurrentInstanceOfType) {
-            // only init a toast container element if does not exist
-            if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
-                _toasterContainer.toasterContainer.init();
-            }
-            _toasterContainer.toasterContainer.add(this._hostElement);
-            // if has expiry - start destruction timer
-            if (this.configuration.expiry) {
-                this._destructOnExpiry(this.configuration.expiry)();
-            }
-            this._handleShow();
-        }
-    }, {
-        key: "_handleShowPopup",
-        value: function _handleShowPopup(getCurrentInstanceOfType) {
-            var _this5 = this;
-
-            if (this.configuration.popupTargetElement) {
-                document.body.appendChild(this._hostElement);
-                this._positionPopup();
-            } else {
-                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
-            }
-            // and delete the previous one
-            if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
-                // dispose old one
-                getCurrentInstanceOfType.forEach(function (instance) {
-                    if (instance.configuration.guid !== _this5.configuration.guid) {
-                        instance.destroy();
-                    }
-                });
-            }
-            this._handleShow();
-        }
-    }, {
-        key: "_handleShowSlideOut",
-        value: function _handleShowSlideOut(getCurrentInstanceOfType) {
-            if (this.configuration.slideOutTargetElement) {
-                this.configuration.slideOutTargetElement.insertBefore(this._hostElement, this.configuration.slideOutTargetElement.firstChild);
-            } else {
-                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET);
-            }
-            this._handleShow();
-        }
-    }, {
-        key: "_handleShow",
-        value: function _handleShow() {
-            var _this6 = this;
-
-            return new Promise(function (resolve, reject) {
-                requestAnimationFrame(function () {
-                    // the time out waits for the css kicks in.
-                    _this6._hostElement.dataset["isInitialising"] = "false";
-                });
-                requestAnimationFrame(function () {
-                    if (_this6.configuration.type === _interfaces.IFloater.Type.POPUP) {
-                        _this6._destructOnEscape();
-                        _this6._destructOnDocumentClick();
-                    }
-                    resolve();
-                });
-            });
-        }
-    }, {
-        key: "_positionPopup",
-        value: function _positionPopup() {
-            var _this7 = this;
-
-            if (this.configuration.popupIsScrollableParentSelector) {
-                // if a scrollable parent's selector is provided - get the parent scrollable element
-                this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
-                    _this7._computePosition();
-                });
-                this._computePosition();
-            } else {
-                // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
-                var targetElRect = this.configuration.popupTargetElement.getBoundingClientRect();
-                this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(targetElRect.right, targetElRect.top));
-            }
-        }
-    }, {
-        key: "_computePosition",
-        value: function _computePosition() {
-            this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
-            if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
-                var parentOverflow = (0, _util.isElementScrollable)(this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-                if (parentOverflow.x || parentOverflow.y) {
-                    // there is an overflow/ scroll in one of the directions
-                    var inView = (0, _util.isInView)(this.configuration.popupTargetElement, this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-                    if (inView.isInView) {
-                        if (JSON.stringify(this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
-                            this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(inView.elementRect.right, inView.elementRect.top));
-                            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-                        }
-                    } else {
-                        this._hostElement.setAttribute("style", (0, _util.getStyleToHideFloater)());
-                        this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-                    }
-                }
-            } else {
-                throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
-            }
         }
     }]);
 

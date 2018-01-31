@@ -1,5 +1,4 @@
 export namespace IFloater {
-
   export enum Type {
     MODAL = "MODAL",
     POPUP = "POPUP",

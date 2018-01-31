@@ -1,9 +1,8 @@
 {
     "compilerOptions": {
         "target": "es6",
-        "declaration": true,
+        "declaration": false,
         "moduleResolution": "node",
-        "declarationDir": "./dist",
         "experimentalDecorators": true,
         "typeRoots": [
             "node_modules/@types/"

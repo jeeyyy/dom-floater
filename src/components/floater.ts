@@ -1,4 +1,4 @@
-const nanoId = require('nanoid');
+const nanoId = require("nanoid");
 const requestInterval = require("request-interval");
 import "./floater.pcss";
 import { CONSTANTS } from "./../constants";
@@ -18,12 +18,8 @@ import {
  * @constructor
  */
 export default class Floater implements IFloater.Component {
-
-
   private _hostElement: HTMLElement;
-  private _destroyBoundWithThis = this.destroy.bind(this);
   private _callbacks = {}; // dynamically constructed object
-
   private _dynamicRefs = {
     CONTENT_ELEMENT_WHEN_NODE_PROPS: {
       PARENT_REF: null,
@@ -36,6 +32,228 @@ export default class Floater implements IFloater.Component {
       PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
     }
   };
+  private HELPER_FUNCTIONS = {
+    getClassName: (config: IFloater.Configuration) => {
+      let baseClass = `dom-floater-base ${config.type}`;
+      switch (config.type) {
+        case IFloater.Type.MODAL:
+          return `${baseClass} ${config.modalMask ? config.modalMask : "MASK"}`;
+        case IFloater.Type.TOAST:
+          return `${baseClass} ${
+            config.toastPosition ? config.toastPosition : ""
+          }`;
+        case IFloater.Type.POPUP:
+          return `${baseClass}`;
+        case IFloater.Type.SLIDEOUT:
+          return `${baseClass} ${
+            config.slideOutPosition ? config.slideOutPosition : ""
+          } ${config.slideOutMask ? config.slideOutMask : "MASK"}`;
+      }
+    },
+    getFloaterParentWithSelector: (
+      startEl: HTMLElement,
+      selector: string
+    ): HTMLElement => {
+      while (startEl.parentNode) {
+        startEl = startEl.parentNode as HTMLElement;
+        if (
+          startEl &&
+          startEl.classList &&
+          startEl.classList.length &&
+          startEl.classList.contains(selector)
+        ) {
+          return startEl;
+        }
+      }
+      return null;
+    },
+    destructOnExpiry: (expiryDurtaion: number) => {
+      let timer;
+      return () => {
+        clearTimeout(timer); // be sure to clear if object exists.
+        timer = setTimeout(() => {
+          this.destroy();
+          clearTimeout(timer);
+        }, expiryDurtaion);
+      };
+    },
+    handlerForDestructOnEscape: (event: KeyboardEvent) => {
+      if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
+        this.destroy();
+      }
+    },
+    handlerForDestructOnDocumentClick: (event: MouseEvent) => {
+      const isChildElement = this.getFloaterElementFromChild(event.srcElement);
+      if (isChildElement === null) {
+        this.destroy();
+      }
+    },
+    destructOnEscape: (registerEvent: boolean) => {
+      if (registerEvent) {
+        document.addEventListener(
+          "keyup",
+          this.HELPER_FUNCTIONS.handlerForDestructOnEscape
+        );
+      } else {
+        document.removeEventListener(
+          "keyup",
+          this.HELPER_FUNCTIONS.handlerForDestructOnEscape
+        );
+      }
+    },
+    destructOnDocumentClick: (registerEvent: boolean) => {
+      if (registerEvent) {
+        document.addEventListener(
+          "click",
+          this.HELPER_FUNCTIONS.handlerForDestructOnDocumentClick
+        );
+      } else {
+        document.removeEventListener(
+          "click",
+          this.HELPER_FUNCTIONS.handlerForDestructOnDocumentClick
+        );
+      }
+    },
+    handleShowModal: (getCurrentInstanceOfType: Floater[]) => {
+      // only init a mask element if this is the first modal that is shown
+      if (
+        getCurrentInstanceOfType &&
+        getCurrentInstanceOfType.length <= 1 &&
+        this.configuration.modalMask
+      ) {
+        masker.init();
+      }
+      // create Modal
+      document.body.appendChild(this._hostElement);
+      this.HELPER_FUNCTIONS.handleShow();
+    },
+    handleShowToast: (getCurrentInstanceOfType: Floater[]) => {
+      // only init a toast container element if does not exist
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+        toasterContainer.init();
+      }
+      toasterContainer.add(this._hostElement);
+      // if has expiry - start destruction timer
+      if (this.configuration.expiry) {
+        this.HELPER_FUNCTIONS.destructOnExpiry(this.configuration.expiry)();
+      }
+      this.HELPER_FUNCTIONS.handleShow();
+    },
+    handleShowPopup: (getCurrentInstanceOfType: Floater[]) => {
+      if (this.configuration.popupTargetElement) {
+        document.body.appendChild(this._hostElement);
+        this.HELPER_FUNCTIONS.positionPopup();
+      } else {
+        throw new Error(
+          CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET
+        );
+      }
+      // and delete the previous one
+      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
+        // dispose old one
+        getCurrentInstanceOfType.forEach((instance: Floater) => {
+          if (instance.configuration.guid !== this.configuration.guid) {
+            instance.destroy();
+          }
+        });
+      }
+      this.HELPER_FUNCTIONS.handleShow();
+    },
+    handleShowSlideOut: (getCurrentInstanceOfType: Floater[]) => {
+      if (this.configuration.slideOutTargetElement) {
+        this.configuration.slideOutTargetElement.insertBefore(
+          this._hostElement,
+          this.configuration.slideOutTargetElement.firstChild
+        );
+      } else {
+        throw new Error(
+          CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET
+        );
+      }
+      this.HELPER_FUNCTIONS.handleShow();
+    },
+    handleShow: () => {
+      return new Promise((resolve, reject) => {
+        requestAnimationFrame(() => {
+          // the time out waits for the css kicks in.
+          this._hostElement.dataset[`isInitialising`] = `false`;
+        });
+        requestAnimationFrame(() => {
+          if (this.configuration.type === IFloater.Type.POPUP) {
+            this.HELPER_FUNCTIONS.destructOnEscape(true);
+            this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+          }
+          resolve();
+        });
+      });
+    },
+    positionPopup: () => {
+      if (this.configuration.popupIsScrollableParentSelector) {
+        // if a scrollable parent's selector is provided - get the parent scrollable element
+        this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(
+          CONSTANTS.TIME_SPAN.MS_50,
+          () => {
+            this.HELPER_FUNCTIONS.computePosition();
+          }
+        );
+        this.HELPER_FUNCTIONS.computePosition();
+      } else {
+        // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
+        const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+        this._hostElement.setAttribute(
+          "style",
+          getStyleToShowFloater(targetElRect.right, targetElRect.top)
+        );
+      }
+    },
+    computePosition: () => {
+      this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs
+        .POPUP_PROPS.SCROLLABLE_PARENT_REF
+        ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+        : this.HELPER_FUNCTIONS.getFloaterParentWithSelector(
+            this.configuration.popupTargetElement,
+            this.configuration.popupIsScrollableParentSelector
+          );
+
+      if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+        const parentOverflow = isElementScrollable(
+          this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+        );
+        if (parentOverflow.x || parentOverflow.y) {
+          // there is an overflow/ scroll in one of the directions
+          const inView = isInView(
+            this.configuration.popupTargetElement,
+            this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+          );
+          if (inView.isInView) {
+            if (
+              JSON.stringify(
+                this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET
+              ) !== JSON.stringify(inView.elementRect)
+            ) {
+              this._hostElement.setAttribute(
+                "style",
+                getStyleToShowFloater(
+                  inView.elementRect.right,
+                  inView.elementRect.top
+                )
+              );
+              this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+                inView.elementRect;
+            }
+          } else {
+            this._hostElement.setAttribute("style", getStyleToHideFloater());
+            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+              inView.elementRect;
+          }
+        }
+      } else {
+        throw new Error(
+          CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT
+        );
+      }
+    }
+  };
 
   constructor(private configuration: IFloater.Configuration) {
     // extend config object with guid
@@ -43,28 +261,40 @@ export default class Floater implements IFloater.Component {
 
     // create DOM
     this._hostElement = document.createElement("ARTICLE");
-    this._hostElement.className = this._getClassName(this.configuration);
+    this._hostElement.className = this.HELPER_FUNCTIONS.getClassName(
+      this.configuration
+    );
     this._hostElement.dataset["guid"] = configuration.guid;
     this._hostElement.dataset["isInitialising"] = "true";
 
     if (configuration.contentElement) {
-      if (this.configuration.contentElementType === IFloater.ContentElementType.TEMPLATE) {
+      if (
+        this.configuration.contentElementType ===
+        IFloater.ContentElementType.TEMPLATE
+      ) {
         this._hostElement.innerHTML = configuration.contentElement;
-      }
-      else if (this.configuration.contentElementType === IFloater.ContentElementType.NODE) {
+      } else if (
+        this.configuration.contentElementType ===
+        IFloater.ContentElementType.NODE
+      ) {
         this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF =
           configuration.contentElement.parentElement;
-        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF =
-          configuration.contentElement.nextElementSibling
-            ? configuration.contentElement.nextElementSibling
-            : configuration.contentElement.previousElementSibling;
-        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD =
-          configuration.contentElement.nextElementSibling
-            ? false
-            : true;
-        this._hostElement.insertBefore(configuration.contentElement, this._hostElement.firstChild); // first child is always empty.
+        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF = configuration
+          .contentElement.nextElementSibling
+          ? configuration.contentElement.nextElementSibling
+          : configuration.contentElement.previousElementSibling;
+        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD = configuration
+          .contentElement.nextElementSibling
+          ? false
+          : true;
+        this._hostElement.insertBefore(
+          configuration.contentElement,
+          this._hostElement.firstChild
+        ); // first child is always empty.
       } else {
-        throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE)
+        throw new Error(
+          CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_CONTENT_ELEMENT_TYPE
+        );
       }
     }
 
@@ -79,16 +309,24 @@ export default class Floater implements IFloater.Component {
     if (this.configuration.type) {
       switch (this.configuration.type) {
         case IFloater.Type.MODAL: {
-          return this._handleShowModal(getCurrentInstanceOfType);
+          return this.HELPER_FUNCTIONS.handleShowModal(
+            getCurrentInstanceOfType
+          );
         }
         case IFloater.Type.TOAST: {
-          return this._handleShowToast(getCurrentInstanceOfType);
+          return this.HELPER_FUNCTIONS.handleShowToast(
+            getCurrentInstanceOfType
+          );
         }
         case IFloater.Type.POPUP: {
-          return this._handleShowPopup(getCurrentInstanceOfType);
+          return this.HELPER_FUNCTIONS.handleShowPopup(
+            getCurrentInstanceOfType
+          );
         }
         case IFloater.Type.SLIDEOUT: {
-          return this._handleShowSlideOut(getCurrentInstanceOfType);
+          return this.HELPER_FUNCTIONS.handleShowSlideOut(
+            getCurrentInstanceOfType
+          );
         }
       }
     } else {
@@ -101,14 +339,18 @@ export default class Floater implements IFloater.Component {
     this._hostElement.dataset["isDestructing"] = "true";
 
     if (this.configuration.contentElement) {
-      if (this.configuration.contentElementType === IFloater.ContentElementType.NODE) {
+      if (
+        this.configuration.contentElementType ===
+        IFloater.ContentElementType.NODE
+      ) {
         if (this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF) {
-
-          this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF
-            .insertBefore(this.configuration.contentElement,
+          this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.PARENT_REF.insertBefore(
+            this.configuration.contentElement,
             !this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD
               ? this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF
-              : this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF.nextSibling);
+              : this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF
+                  .nextSibling
+          );
         }
       }
     }
@@ -125,9 +367,15 @@ export default class Floater implements IFloater.Component {
       case IFloater.Type.TOAST:
         break;
       case IFloater.Type.POPUP:
-        if (this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
-          requestInterval.clear(this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL);
+        if (
+          this._dynamicRefs &&
+          this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL
+        ) {
+          requestInterval.clear(
+            this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL
+          );
         }
+        this.HELPER_FUNCTIONS.destructOnDocumentClick(false);
         break;
     }
 
@@ -170,189 +418,5 @@ export default class Floater implements IFloater.Component {
       }
     }
     return null;
-  }
-
-
-  private _getClassName(config: IFloater.Configuration) {
-    let baseClass = `dom-floater-base ${config.type}`
-    switch (config.type) {
-      case IFloater.Type.MODAL:
-        return `${baseClass} ${config.modalMask ? config.modalMask : 'MASK'}`;
-      case IFloater.Type.TOAST:
-        return `${baseClass} ${config.toastPosition ? config.toastPosition : ''}`;
-      case IFloater.Type.POPUP:
-        return `${baseClass}`;
-      case IFloater.Type.SLIDEOUT:
-        return `${baseClass} ${config.slideOutPosition ? config.slideOutPosition : ''} ${config.slideOutMask ? config.slideOutMask : 'MASK'}`;
-    }
-  }
-
-
-  private _getFloaterParentWithSelector(
-    startEl: HTMLElement,
-    selector: string
-  ): HTMLElement {
-    while (startEl.parentNode) {
-      startEl = startEl.parentNode as HTMLElement;
-      if (
-        startEl &&
-        startEl.classList &&
-        startEl.classList.length &&
-        startEl.classList.contains(selector)
-      ) {
-        return startEl;
-      }
-    }
-    return null;
-  }
-
-  private _destructOnExpiry(expiryDurtaion: number) {
-    let timer;
-    return () => {
-      clearTimeout(timer); // be sure to clear if object exists.
-      timer = setTimeout(() => {
-        this._destroyBoundWithThis();
-        clearTimeout(timer);
-      }, expiryDurtaion);
-    };
-  }
-
-  private _destructOnEscape() {
-    document.addEventListener("keyup", (event: KeyboardEvent) => {
-      if (event.keyCode === CONSTANTS.COMMON_KEY_CODES.ESC) {
-        this._destroyBoundWithThis();
-      }
-    });
-  }
-
-  private _destructOnDocumentClick() {
-    document.addEventListener("click", (event: MouseEvent) => {
-      const isChildElement = this.getFloaterElementFromChild(event.srcElement);
-      if (isChildElement === null) {
-        this._destroyBoundWithThis();
-      }
-    });
-  }
-
-  private _handleShowModal(getCurrentInstanceOfType: Floater[]) {
-    // only init a mask element if this is the first modal that is shown
-    if (
-      getCurrentInstanceOfType &&
-      getCurrentInstanceOfType.length <= 1 &&
-      this.configuration.modalMask) {
-      masker.init();
-    }
-    // create Modal
-    document.body.appendChild(this._hostElement);
-    this._handleShow();
-  }
-
-  private _handleShowToast(getCurrentInstanceOfType: Floater[]) {
-    // only init a toast container element if does not exist
-    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
-      toasterContainer.init();
-    }
-    toasterContainer.add(this._hostElement);
-    // if has expiry - start destruction timer
-    if (this.configuration.expiry) {
-      this._destructOnExpiry(this.configuration.expiry)();
-    }
-    this._handleShow();
-  }
-
-  private _handleShowPopup(getCurrentInstanceOfType: Floater[]) {
-    if (this.configuration.popupTargetElement) {
-      document.body.appendChild(this._hostElement);
-      this._positionPopup();
-    } else {
-      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_POPUP_TARGET);
-    }
-    // and delete the previous one
-    if (getCurrentInstanceOfType && getCurrentInstanceOfType.length > 0) {
-      // dispose old one
-      getCurrentInstanceOfType.forEach((instance: Floater) => {
-        if (instance.configuration.guid !== this.configuration.guid) {
-          instance.destroy();
-        }
-      });
-    }
-    this._handleShow();
-  }
-
-  private _handleShowSlideOut(getCurrentInstanceOfType: Floater[]) {
-    if (this.configuration.slideOutTargetElement) {
-      this.configuration.slideOutTargetElement.insertBefore(this._hostElement, this.configuration.slideOutTargetElement.firstChild);
-    } else {
-      throw new Error(CONSTANTS.MESSAGES.ERROR_IN_CONFIGURATION_NO_SLIDEOUT_TARGET);
-    }
-    this._handleShow();
-  }
-
-  private _handleShow() {
-    return new Promise((resolve, reject) => {
-      requestAnimationFrame(() => {
-        // the time out waits for the css kicks in.
-        this._hostElement.dataset[`isInitialising`] = `false`;
-      });
-      requestAnimationFrame(() => {
-        if (this.configuration.type === IFloater.Type.POPUP) {
-          this._destructOnEscape();
-          this._destructOnDocumentClick();
-        }
-        resolve();
-      });
-    });
-  }
-
-  private _positionPopup() {
-    if (this.configuration.popupIsScrollableParentSelector) {
-      // if a scrollable parent's selector is provided - get the parent scrollable element
-      this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL =
-        requestInterval(CONSTANTS.TIME_SPAN.MS_50, () => {
-          this._computePosition();
-        });
-      this._computePosition();
-    } else {
-      // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
-      const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
-      this._hostElement.setAttribute(
-        "style",
-        getStyleToShowFloater(targetElRect.right, targetElRect.top)
-      );
-    }
-  }
-
-  private _computePosition() {
-    this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF =
-      this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
-        ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
-        : this._getFloaterParentWithSelector(this.configuration.popupTargetElement, this.configuration.popupIsScrollableParentSelector);
-
-    if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
-      const parentOverflow = isElementScrollable(this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-      if (parentOverflow.x || parentOverflow.y) {
-        // there is an overflow/ scroll in one of the directions
-        const inView = isInView(this.configuration.popupTargetElement, this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-        if (inView.isInView) {
-          if (JSON.stringify(this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
-            this._hostElement.setAttribute(
-              "style",
-              getStyleToShowFloater(
-                inView.elementRect.right,
-                inView.elementRect.top
-              )
-            );
-            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-          }
-        } else {
-          this._hostElement.setAttribute("style", getStyleToHideFloater());
-          this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-        }
-      }
-    } else {
-      throw new Error(
-        CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT
-      );
-    }
   }
 }
