@@ -10,6 +10,7 @@ const createFloater = (config) => {
 
     const floater = new Floater(config);
     floater.show();
+    
     // JUST FOR TESTING
     setTimeout(() => {
         let closeButton = floater.getContentElementWithSelector('close-button');
@@ -82,7 +83,7 @@ document
                 : document.body;
         const config: IFloater.Configuration = {
             type: IFloater.Type.SLIDEOUT,
-            contentElement: `
+            contentElement: `            
             <div>
                 Some Toast Content. ${ Math.floor(Math.random() * 100)}
                 <button 
