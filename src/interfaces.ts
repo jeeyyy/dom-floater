@@ -17,18 +17,6 @@ export namespace IFloater {
     BOTTOM_RIGHT = "BOTTOM_RIGHT"
   }
 
-  export enum PopupTriggerOn {
-    CLICK = "CLICK",
-    HOVER = "HOVER" // TODO
-  }
-
-  export enum PopupPosition {
-    TOP = "TOP",
-    RIGHT = "RIGHT",
-    BOTTOM = "BOTTOM",
-    LEFT = "LEFT"
-  }
-
   export enum SlideOutPosition {
     TOP = "TOP",
     RIGHT = "RIGHT",
@@ -52,8 +40,7 @@ export namespace IFloater {
     toastPosition?: ToastPosition;
     // POPUP PROPS
     popupTargetElement?: HTMLElement;
-    popupTriggerOn?: PopupTriggerOn;
-    popupIsScrollableParentSelector?: string;
+    popupMask?: boolean;
     // SLIDEOUT PROPS
     slideOutTargetElement?: HTMLElement;
     slideOutPosition?: SlideOutPosition;

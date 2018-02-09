@@ -1,5 +1,4 @@
 const nanoId = require("nanoid");
-const requestInterval = require("request-interval");
 import "./floater.pcss";
 import { CONSTANTS } from "./../constants";
 import { IFloater } from "../interfaces";
@@ -27,9 +26,9 @@ export default class Floater implements IFloater.Component {
       IS_LAST_CHILD: null
     },
     POPUP_PROPS: {
-      SCROLLABLE_PARENT_REF: null,
-      POSITION_INTERVAL: null,
-      PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
+      POPUP_MASK: null,
+      POPUP_MASK_WHEEL_LISTENER: null,
+      POPUP_MASK_WHEEL_CLICK_LISTENER: null
     }
   };
   private HELPER_FUNCTIONS = {
@@ -88,6 +87,40 @@ export default class Floater implements IFloater.Component {
         this.destroy();
       }
     },
+    handlerForDestructOnPopupMaskClick: (event: MouseEvent) => {
+      this.destroy();
+    },
+    destructOnPopupMask: (registerEvent: boolean) => {
+      if (registerEvent) {
+        this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER = require("mouse-wheel")(
+          this._dynamicRefs.POPUP_PROPS.POPUP_MASK,
+          (dx, dy) => {
+            this.destroy();
+          }
+        );
+        this._dynamicRefs.POPUP_PROPS.POPUP_MASK.addEventListener(
+          "click",
+          this.HELPER_FUNCTIONS.handlerForDestructOnPopupMaskClick
+        );
+      } else {
+        if (
+          this._dynamicRefs &&
+          this._dynamicRefs.POPUP_PROPS &&
+          this._dynamicRefs.POPUP_PROPS.POPUP_MASK
+        ) {
+          if (this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER) {
+            this._dynamicRefs.POPUP_PROPS.POPUP_MASK.removeEventListener(
+              "wheel",
+              this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER
+            );
+          }
+          this._dynamicRefs.POPUP_PROPS.POPUP_MASK.removeEventListener(
+            "click",
+            this.HELPER_FUNCTIONS.handlerForDestructOnPopupMaskClick
+          );
+        }
+      }
+    },
     destructOnEscape: (registerEvent: boolean) => {
       if (registerEvent) {
         document.addEventListener(
@@ -140,6 +173,13 @@ export default class Floater implements IFloater.Component {
       this.HELPER_FUNCTIONS.handleShow();
     },
     handleShowPopup: (getCurrentInstanceOfType: Floater[]) => {
+      if (this.configuration.popupMask) {
+        this._dynamicRefs.POPUP_PROPS.POPUP_MASK = document.createElement(
+          "NAV"
+        );
+        this._dynamicRefs.POPUP_PROPS.POPUP_MASK.className = "popup-mask";
+        this._hostElement.appendChild(this._dynamicRefs.POPUP_PROPS.POPUP_MASK);
+      }
       if (this.configuration.popupTargetElement) {
         document.body.appendChild(this._hostElement);
         this.HELPER_FUNCTIONS.positionPopup();
@@ -180,79 +220,130 @@ export default class Floater implements IFloater.Component {
         });
         requestAnimationFrame(() => {
           if (this.configuration.type === IFloater.Type.POPUP) {
-            this.HELPER_FUNCTIONS.destructOnEscape(true);
-            this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+            this.HELPER_FUNCTIONS.destructOnEscape(true); // TODO: Make this a property
+            if (this.configuration.popupMask) {
+              this.HELPER_FUNCTIONS.destructOnPopupMask(true);
+            } else {
+              this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+            }
           }
           resolve();
         });
       });
     },
     positionPopup: () => {
-      if (this.configuration.popupIsScrollableParentSelector) {
-        // if a scrollable parent's selector is provided - get the parent scrollable element
-        this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(
-          CONSTANTS.TIME_SPAN.MS_50,
-          () => {
-            this.HELPER_FUNCTIONS.computePosition();
-          }
-        );
-        this.HELPER_FUNCTIONS.computePosition();
-      } else {
-        // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
-        const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+      // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
+      const targetElRect: ClientRect = this.configuration.popupTargetElement.getBoundingClientRect();
+      const popUpElRect: ClientRect = this._hostElement.getBoundingClientRect();
+      const attempts = [
+        "rightTop",
+        "rightBottom",
+        "topLeft",
+        "topRight",
+        "leftTop",
+        "leftBottom",
+        "bottomLeft",
+        "bottomRight"
+      ];
+      const popupHeight = popUpElRect.bottom - popUpElRect.top;
+      const popupWidth = popUpElRect.right - popUpElRect.left;
+      const attemptMath = {
+        rightTop: {
+          x: targetElRect.right,
+          y: targetElRect.top
+        },
+        rightBottom: {
+          x: targetElRect.right,
+          y: targetElRect.bottom - popupHeight
+        },
+        topLeft: {
+          x: targetElRect.left,
+          y: targetElRect.top - popupHeight
+        },
+        topRight: {
+          x: targetElRect.right - popupWidth,
+          y: targetElRect.top - popupHeight
+        },
+        leftTop: {
+          x: targetElRect.left - popupWidth,
+          y: targetElRect.top
+        },
+        leftBottom: {
+          x: targetElRect.left - popupWidth,
+          y: targetElRect.bottom - popupHeight
+        },
+        bottomLeft: {
+          x: targetElRect.left,
+          y: targetElRect.bottom
+        },
+        bottomRight: {
+          x: targetElRect.right - popupWidth,
+          y: targetElRect.bottom
+        }
+      };
+      for (let index in attempts) {
+        const direction = attempts[index];
         this._hostElement.setAttribute(
           "style",
-          getStyleToShowFloater(targetElRect.right, targetElRect.top)
+          getStyleToShowFloater(
+            attemptMath[direction].x,
+            attemptMath[direction].y
+          )
         );
-      }
-    },
-    computePosition: () => {
-      this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs
-        .POPUP_PROPS.SCROLLABLE_PARENT_REF
-        ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
-        : this.HELPER_FUNCTIONS.getFloaterParentWithSelector(
-            this.configuration.popupTargetElement,
-            this.configuration.popupIsScrollableParentSelector
-          );
-
-      if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
-        const parentOverflow = isElementScrollable(
-          this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
-        );
-        if (parentOverflow.x || parentOverflow.y) {
-          // there is an overflow/ scroll in one of the directions
-          const inView = isInView(
-            this.configuration.popupTargetElement,
-            this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
-          );
-          if (inView.isInView) {
-            if (
-              JSON.stringify(
-                this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET
-              ) !== JSON.stringify(inView.elementRect)
-            ) {
-              this._hostElement.setAttribute(
-                "style",
-                getStyleToShowFloater(
-                  inView.elementRect.right,
-                  inView.elementRect.top
-                )
-              );
-              this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
-                inView.elementRect;
-            }
-          } else {
-            this._hostElement.setAttribute("style", getStyleToHideFloater());
-            this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
-              inView.elementRect;
-          }
+        const inView = isInView(this._hostElement, document.body);
+        if (inView.isInView) {
+          this._hostElement.dataset["popupPosition"] = direction;
+          break;
         }
-      } else {
-        throw new Error(
-          CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT
-        );
       }
     }
+    // computePosition: () => {
+    //   this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs
+    //     .POPUP_PROPS.SCROLLABLE_PARENT_REF
+    //     ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+    //     : this.HELPER_FUNCTIONS.getFloaterParentWithSelector(
+    //       this.configuration.popupTargetElement,
+    //       this.configuration.popupIsScrollableParentSelector
+    //     );
+
+    //   if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+    //     const parentOverflow = isElementScrollable(
+    //       this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+    //     );
+    //     if (parentOverflow.x || parentOverflow.y) {
+    //       // there is an overflow/ scroll in one of the directions
+    //       const inView = isInView(
+    //         this.configuration.popupTargetElement,
+    //         this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+    //       );
+    //       if (inView.isInView) {
+    //         if (
+    //           JSON.stringify(
+    //             this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET
+    //           ) !== JSON.stringify(inView.elementRect)
+    //         ) {
+    //           this._hostElement.setAttribute(
+    //             "style",
+    //             getStyleToShowFloater(
+    //               inView.elementRect.right,
+    //               inView.elementRect.top
+    //             )
+    //           );
+    //           this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+    //             inView.elementRect;
+    //         }
+    //       } else {
+    //         this._hostElement.setAttribute("style", getStyleToHideFloater());
+    //         this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+    //           inView.elementRect;
+    //       }
+    //     }
+    //   } else {
+    //     throw new Error(
+    //       CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT
+    //     );
+    //   }
+    // }
   };
 
   constructor(private configuration: IFloater.Configuration) {
@@ -367,19 +458,27 @@ export default class Floater implements IFloater.Component {
       case IFloater.Type.TOAST:
         break;
       case IFloater.Type.POPUP:
-        if (
-          this._dynamicRefs &&
-          this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL
-        ) {
-          requestInterval.clear(
-            this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL
-          );
-        }
+        this.HELPER_FUNCTIONS.destructOnEscape(false);
         this.HELPER_FUNCTIONS.destructOnDocumentClick(false);
+        if (this.configuration.popupMask) {
+          this.HELPER_FUNCTIONS.destructOnPopupMask(false);
+        }
         break;
     }
 
-    this._dynamicRefs = null;
+    if (this._dynamicRefs) {
+      if (this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS) {
+        for (let member in this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS) {
+          this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS[member] = null;
+        }
+      }
+      if (this._dynamicRefs.POPUP_PROPS) {
+        for (let member in this._dynamicRefs.POPUP_PROPS) {
+          this._dynamicRefs.POPUP_PROPS[member] = null;
+        }
+      }
+      this._dynamicRefs = null;
+    }
     return new Promise(resolve => {
       requestAnimationFrame(() => {
         // remove floater instance management

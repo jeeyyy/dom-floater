@@ -110,8 +110,9 @@ document
         const popupIsScrollableParentSelector = value.length > 0 ? 'overflowingPanel' : null;
         const config: IFloater.Configuration = {
             type: IFloater.Type.POPUP,
+            popupMask: true,
             contentElement: `
-            <div>
+            <div style='border: 1px solid;'>
                 Some Toast Content. ${ Math.floor(Math.random() * 100)}
                 <button 
                     type='button'
@@ -121,8 +122,7 @@ document
                 </button>
             </div>`,
             contentElementType: IFloater.ContentElementType.TEMPLATE,
-            popupTargetElement: popupTargetElement,
-            popupIsScrollableParentSelector: popupIsScrollableParentSelector
+            popupTargetElement: popupTargetElement
         };
         createFloater(config);
     });

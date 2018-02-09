@@ -4,6 +4,7 @@
 .dom-floater-base {
   z-index: 1000;
   box-sizing: border-box;  
+  background: transparent;
 
   &.MODAL {
     position: fixed;
@@ -22,5 +23,37 @@
 
   &.POPUP {
     position: fixed;
+    >nav.popup-mask {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      position: fixed;
+      z-index: -1;
+      background: rgb(0, 0, 0);
+      opacity: 0.3;
+    }
+    &[data-popup-position="righTop"] {
+    }
+    &[data-popup-position="rightBottom"] {
+
+    }
+    &[data-popup-position="topLeft"] {
+
+    }
+    &[data-popup-position="topRight"] {
+
+    }
+    &[data-popup-position="leftTop"] {
+
+    }
+     &[data-popup-position="leftBottom"] {
+
+    }
+     &[data-popup-position="bottomLeft"] {
+    }
+     &[data-popup-position="bottomRight"] {
+
+    }
   }
 }

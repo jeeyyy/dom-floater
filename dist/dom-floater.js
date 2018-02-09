@@ -669,7 +669,7 @@ var _floater = __webpack_require__(8);
 
 var domFloater = _interopRequireWildcard(_floater);
 
-var _floaterManager = __webpack_require__(22);
+var _floaterManager = __webpack_require__(24);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -716,7 +716,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "// Utility styles on attributes.\r\n[data-is-initialising=\"true\"] {\r\n   opacity: 0;\r\n }\r\n\r\n[data-is-destructing=\"true\"] {\r\n   opacity: 0;\r\n }", ""]);
+exports.push([module.i, "// Utility styles on attributes.\n[data-is-initialising=\"true\"] {\n   opacity: 0;\n }\n\n[data-is-destructing=\"true\"] {\n   opacity: 0;\n }", ""]);
 
 // exports
 
@@ -846,7 +846,6 @@ var _util = __webpack_require__(18);
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var nanoId = __webpack_require__(19);
-var requestInterval = __webpack_require__(21);
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -867,9 +866,9 @@ var Floater = function () {
                 IS_LAST_CHILD: null
             },
             POPUP_PROPS: {
-                SCROLLABLE_PARENT_REF: null,
-                POSITION_INTERVAL: null,
-                PREVIOUS_COMPUTED_RECT_FOR_TARGET: null
+                POPUP_MASK: null,
+                POPUP_MASK_WHEEL_LISTENER: null,
+                POPUP_MASK_WHEEL_CLICK_LISTENER: null
             }
         };
         this.HELPER_FUNCTIONS = {
@@ -916,6 +915,24 @@ var Floater = function () {
                     _this.destroy();
                 }
             },
+            handlerForDestructOnPopupMaskClick: function handlerForDestructOnPopupMaskClick(event) {
+                _this.destroy();
+            },
+            destructOnPopupMask: function destructOnPopupMask(registerEvent) {
+                if (registerEvent) {
+                    _this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER = __webpack_require__(21)(_this._dynamicRefs.POPUP_PROPS.POPUP_MASK, function (dx, dy) {
+                        _this.destroy();
+                    });
+                    _this._dynamicRefs.POPUP_PROPS.POPUP_MASK.addEventListener("click", _this.HELPER_FUNCTIONS.handlerForDestructOnPopupMaskClick);
+                } else {
+                    if (_this._dynamicRefs && _this._dynamicRefs.POPUP_PROPS && _this._dynamicRefs.POPUP_PROPS.POPUP_MASK) {
+                        if (_this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER) {
+                            _this._dynamicRefs.POPUP_PROPS.POPUP_MASK.removeEventListener("wheel", _this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER);
+                        }
+                        _this._dynamicRefs.POPUP_PROPS.POPUP_MASK.removeEventListener("click", _this.HELPER_FUNCTIONS.handlerForDestructOnPopupMaskClick);
+                    }
+                }
+            },
             destructOnEscape: function destructOnEscape(registerEvent) {
                 if (registerEvent) {
                     document.addEventListener("keyup", _this.HELPER_FUNCTIONS.handlerForDestructOnEscape);
@@ -952,6 +969,11 @@ var Floater = function () {
                 _this.HELPER_FUNCTIONS.handleShow();
             },
             handleShowPopup: function handleShowPopup(getCurrentInstanceOfType) {
+                if (_this.configuration.popupMask) {
+                    _this._dynamicRefs.POPUP_PROPS.POPUP_MASK = document.createElement("NAV");
+                    _this._dynamicRefs.POPUP_PROPS.POPUP_MASK.className = "popup-mask";
+                    _this._hostElement.appendChild(_this._dynamicRefs.POPUP_PROPS.POPUP_MASK);
+                }
                 if (_this.configuration.popupTargetElement) {
                     document.body.appendChild(_this._hostElement);
                     _this.HELPER_FUNCTIONS.positionPopup();
@@ -985,47 +1007,114 @@ var Floater = function () {
                     });
                     requestAnimationFrame(function () {
                         if (_this.configuration.type === _interfaces.IFloater.Type.POPUP) {
-                            _this.HELPER_FUNCTIONS.destructOnEscape(true);
-                            _this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+                            _this.HELPER_FUNCTIONS.destructOnEscape(true); // TODO: Make this a property
+                            if (_this.configuration.popupMask) {
+                                _this.HELPER_FUNCTIONS.destructOnPopupMask(true);
+                            } else {
+                                _this.HELPER_FUNCTIONS.destructOnDocumentClick(true);
+                            }
                         }
                         resolve();
                     });
                 });
             },
             positionPopup: function positionPopup() {
-                if (_this.configuration.popupIsScrollableParentSelector) {
-                    // if a scrollable parent's selector is provided - get the parent scrollable element
-                    _this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL = requestInterval(_constants.CONSTANTS.TIME_SPAN.MS_50, function () {
-                        _this.HELPER_FUNCTIONS.computePosition();
-                    });
-                    _this.HELPER_FUNCTIONS.computePosition();
-                } else {
-                    // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
-                    var targetElRect = _this.configuration.popupTargetElement.getBoundingClientRect();
-                    _this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(targetElRect.right, targetElRect.top));
-                }
-            },
-            computePosition: function computePosition() {
-                _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF ? _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF : _this.HELPER_FUNCTIONS.getFloaterParentWithSelector(_this.configuration.popupTargetElement, _this.configuration.popupIsScrollableParentSelector);
-                if (_this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
-                    var parentOverflow = (0, _util.isElementScrollable)(_this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-                    if (parentOverflow.x || parentOverflow.y) {
-                        // there is an overflow/ scroll in one of the directions
-                        var inView = (0, _util.isInView)(_this.configuration.popupTargetElement, _this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF);
-                        if (inView.isInView) {
-                            if (JSON.stringify(_this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET) !== JSON.stringify(inView.elementRect)) {
-                                _this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(inView.elementRect.right, inView.elementRect.top));
-                                _this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-                            }
-                        } else {
-                            _this._hostElement.setAttribute("style", (0, _util.getStyleToHideFloater)());
-                            _this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET = inView.elementRect;
-                        }
+                // there is no parent that can scroll, so position next to target element & do not watch to update on viewport changes.
+                var targetElRect = _this.configuration.popupTargetElement.getBoundingClientRect();
+                var popUpElRect = _this._hostElement.getBoundingClientRect();
+                var attempts = ["rightTop", "rightBottom", "topLeft", "topRight", "leftTop", "leftBottom", "bottomLeft", "bottomRight"];
+                var popupHeight = popUpElRect.bottom - popUpElRect.top;
+                var popupWidth = popUpElRect.right - popUpElRect.left;
+                var attemptMath = {
+                    rightTop: {
+                        x: targetElRect.right,
+                        y: targetElRect.top
+                    },
+                    rightBottom: {
+                        x: targetElRect.right,
+                        y: targetElRect.bottom - popupHeight
+                    },
+                    topLeft: {
+                        x: targetElRect.left,
+                        y: targetElRect.top - popupHeight
+                    },
+                    topRight: {
+                        x: targetElRect.right - popupWidth,
+                        y: targetElRect.top - popupHeight
+                    },
+                    leftTop: {
+                        x: targetElRect.left - popupWidth,
+                        y: targetElRect.top
+                    },
+                    leftBottom: {
+                        x: targetElRect.left - popupWidth,
+                        y: targetElRect.bottom - popupHeight
+                    },
+                    bottomLeft: {
+                        x: targetElRect.left,
+                        y: targetElRect.bottom
+                    },
+                    bottomRight: {
+                        x: targetElRect.right - popupWidth,
+                        y: targetElRect.bottom
                     }
-                } else {
-                    throw new Error(_constants.CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT);
+                };
+                for (var index in attempts) {
+                    var direction = attempts[index];
+                    _this._hostElement.setAttribute("style", (0, _util.getStyleToShowFloater)(attemptMath[direction].x, attemptMath[direction].y));
+                    var inView = (0, _util.isInView)(_this._hostElement, document.body);
+                    if (inView.isInView) {
+                        _this._hostElement.dataset["popupPosition"] = direction;
+                        break;
+                    }
                 }
             }
+            // computePosition: () => {
+            //   this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF = this._dynamicRefs
+            //     .POPUP_PROPS.SCROLLABLE_PARENT_REF
+            //     ? this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+            //     : this.HELPER_FUNCTIONS.getFloaterParentWithSelector(
+            //       this.configuration.popupTargetElement,
+            //       this.configuration.popupIsScrollableParentSelector
+            //     );
+            //   if (this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF) {
+            //     const parentOverflow = isElementScrollable(
+            //       this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+            //     );
+            //     if (parentOverflow.x || parentOverflow.y) {
+            //       // there is an overflow/ scroll in one of the directions
+            //       const inView = isInView(
+            //         this.configuration.popupTargetElement,
+            //         this._dynamicRefs.POPUP_PROPS.SCROLLABLE_PARENT_REF
+            //       );
+            //       if (inView.isInView) {
+            //         if (
+            //           JSON.stringify(
+            //             this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET
+            //           ) !== JSON.stringify(inView.elementRect)
+            //         ) {
+            //           this._hostElement.setAttribute(
+            //             "style",
+            //             getStyleToShowFloater(
+            //               inView.elementRect.right,
+            //               inView.elementRect.top
+            //             )
+            //           );
+            //           this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+            //             inView.elementRect;
+            //         }
+            //       } else {
+            //         this._hostElement.setAttribute("style", getStyleToHideFloater());
+            //         this._dynamicRefs.POPUP_PROPS.PREVIOUS_COMPUTED_RECT_FOR_TARGET =
+            //           inView.elementRect;
+            //       }
+            //     }
+            //   } else {
+            //     throw new Error(
+            //       CONSTANTS.MESSAGES.ERROR_IN_FINDING_POPUP_SCROLLABLE_PARENT
+            //     );
+            //   }
+            // }
         };
         // extend config object with guid
         configuration.guid = nanoId();
@@ -1101,13 +1190,26 @@ var Floater = function () {
                 case _interfaces.IFloater.Type.TOAST:
                     break;
                 case _interfaces.IFloater.Type.POPUP:
-                    if (this._dynamicRefs && this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL) {
-                        requestInterval.clear(this._dynamicRefs.POPUP_PROPS.POSITION_INTERVAL);
-                    }
+                    this.HELPER_FUNCTIONS.destructOnEscape(false);
                     this.HELPER_FUNCTIONS.destructOnDocumentClick(false);
+                    if (this.configuration.popupMask) {
+                        this.HELPER_FUNCTIONS.destructOnPopupMask(false);
+                    }
                     break;
             }
-            this._dynamicRefs = null;
+            if (this._dynamicRefs) {
+                if (this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS) {
+                    for (var member in this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS) {
+                        this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS[member] = null;
+                    }
+                }
+                if (this._dynamicRefs.POPUP_PROPS) {
+                    for (var _member in this._dynamicRefs.POPUP_PROPS) {
+                        this._dynamicRefs.POPUP_PROPS[_member] = null;
+                    }
+                }
+                this._dynamicRefs = null;
+            }
             return new Promise(function (resolve) {
                 requestAnimationFrame(function () {
                     // remove floater instance management
@@ -1193,7 +1295,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  box-sizing: border-box;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%; \r\n    -webkit-transform: translateX(-50%) translateY(-50%); \r\n            transform: translateX(-50%) translateY(-50%);\r\n  }\n.dom-floater-base.MODAL.MASK {      \r\n    }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\n  z-index: 1000;\n  box-sizing: border-box;  \n  background: transparent;\n}\n.dom-floater-base.MODAL {\n    position: fixed;\n    left: 50%;\n    top: 50%; \n    -webkit-transform: translateX(-50%) translateY(-50%); \n            transform: translateX(-50%) translateY(-50%);\n  }\n.dom-floater-base.MODAL.MASK {      \n    }\n.dom-floater-base.TOAST {\n    position: relative;\n\n  }\n.dom-floater-base.POPUP {\n    position: fixed;\n  }\n.dom-floater-base.POPUP >nav.popup-mask {\n      top: 0;\n      right: 0;\n      bottom: 0;\n      left: 0;\n      position: fixed;\n      z-index: -1;\n      background: rgb(0, 0, 0);\n      opacity: 0.3;\n    }\n.dom-floater-base.POPUP[data-popup-position=\"righTop\"] {\n    }\n.dom-floater-base.POPUP[data-popup-position=\"rightBottom\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topLeft\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topRight\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftTop\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftBottom\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomLeft\"] {\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomRight\"] {\n\n    }", ""]);
 
 // exports
 
@@ -1228,18 +1330,6 @@ var IFloater = exports.IFloater = undefined;
         ToastPosition["BOTTOM_LEFT"] = "BOTTOM_LEFT";
         ToastPosition["BOTTOM_RIGHT"] = "BOTTOM_RIGHT";
     })(ToastPosition = IFloater.ToastPosition || (IFloater.ToastPosition = {}));
-    var PopupTriggerOn = void 0;
-    (function (PopupTriggerOn) {
-        PopupTriggerOn["CLICK"] = "CLICK";
-        PopupTriggerOn["HOVER"] = "HOVER"; // TODO
-    })(PopupTriggerOn = IFloater.PopupTriggerOn || (IFloater.PopupTriggerOn = {}));
-    var PopupPosition = void 0;
-    (function (PopupPosition) {
-        PopupPosition["TOP"] = "TOP";
-        PopupPosition["RIGHT"] = "RIGHT";
-        PopupPosition["BOTTOM"] = "BOTTOM";
-        PopupPosition["LEFT"] = "LEFT";
-    })(PopupPosition = IFloater.PopupPosition || (IFloater.PopupPosition = {}));
     var SlideOutPosition = void 0;
     (function (SlideOutPosition) {
         SlideOutPosition["TOP"] = "TOP";
@@ -1348,7 +1438,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 999;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n}", ""]);
+exports.push([module.i, ".dom-masker-base {\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  position: fixed;\n  z-index: 999;\n  background: rgb(0, 0, 0);\n  opacity: 0.3;\n}", ""]);
 
 // exports
 
@@ -1451,7 +1541,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, ".dom-toaster-container-base {\r\n  position: fixed;\r\n  top: 0rem;\r\n  left: 50%;\r\n  -webkit-transform: translateX(-50%) translateY(0);\r\n          transform: translateX(-50%) translateY(0);\r\n  z-index: 1001;\r\n}", ""]);
+exports.push([module.i, ".dom-toaster-container-base {\n  position: fixed;\n  top: 0rem;\n  left: 50%;\n  -webkit-transform: translateX(-50%) translateY(0);\n          transform: translateX(-50%) translateY(0);\n  z-index: 1001;\n}", ""]);
 
 // exports
 
@@ -1561,33 +1651,129 @@ module.exports = function (bytes) {
 "use strict";
 
 
-exports = module.exports = interval;
-function interval(delay, fn) {
-  var start = Date.now();
-  var data = {};
-  data.id = requestAnimationFrame(loop);
+var toPX = __webpack_require__(22)
 
-  return data;
+module.exports = mouseWheelListen
 
-  function loop() {
-    data.id = requestAnimationFrame(loop);
-
-    if (Date.now() - start >= delay) {
-      fn();
-      start = Date.now();
+function mouseWheelListen(element, callback, noScroll) {
+  if(typeof element === 'function') {
+    noScroll = !!callback
+    callback = element
+    element = window
+  }
+  var lineHeight = toPX('ex', element)
+  var listener = function(ev) {
+    if(noScroll) {
+      ev.preventDefault()
+    }
+    var dx = ev.deltaX || 0
+    var dy = ev.deltaY || 0
+    var dz = ev.deltaZ || 0
+    var mode = ev.deltaMode
+    var scale = 1
+    switch(mode) {
+      case 1:
+        scale = lineHeight
+      break
+      case 2:
+        scale = window.innerHeight
+      break
+    }
+    dx *= scale
+    dy *= scale
+    dz *= scale
+    if(dx || dy || dz) {
+      return callback(dx, dy, dz, ev)
     }
   }
-}
-
-
-exports.clear = clearInterval;
-function clearInterval(data) {
-  cancelAnimationFrame(data.id);
+  element.addEventListener('wheel', listener)
+  return listener
 }
 
 
 /***/ }),
 /* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var parseUnit = __webpack_require__(23)
+
+module.exports = toPX
+
+var PIXELS_PER_INCH = 96
+
+function getPropertyInPX(element, prop) {
+  var parts = parseUnit(getComputedStyle(element).getPropertyValue(prop))
+  return parts[0] * toPX(parts[1], element)
+}
+
+//This brutal hack is needed
+function getSizeBrutal(unit, element) {
+  var testDIV = document.createElement('div')
+  testDIV.style['font-size'] = '128' + unit
+  element.appendChild(testDIV)
+  var size = getPropertyInPX(testDIV, 'font-size') / 128
+  element.removeChild(testDIV)
+  return size
+}
+
+function toPX(str, element) {
+  element = element || document.body
+  str = (str || 'px').trim().toLowerCase()
+  if(element === window || element === document) {
+    element = document.body 
+  }
+  switch(str) {
+    case '%':  //Ambiguous, not sure if we should use width or height
+      return element.clientHeight / 100.0
+    case 'ch':
+    case 'ex':
+      return getSizeBrutal(str, element)
+    case 'em':
+      return getPropertyInPX(element, 'font-size')
+    case 'rem':
+      return getPropertyInPX(document.body, 'font-size')
+    case 'vw':
+      return window.innerWidth/100
+    case 'vh':
+      return window.innerHeight/100
+    case 'vmin':
+      return Math.min(window.innerWidth, window.innerHeight) / 100
+    case 'vmax':
+      return Math.max(window.innerWidth, window.innerHeight) / 100
+    case 'in':
+      return PIXELS_PER_INCH
+    case 'cm':
+      return PIXELS_PER_INCH / 2.54
+    case 'mm':
+      return PIXELS_PER_INCH / 25.4
+    case 'pt':
+      return PIXELS_PER_INCH / 72
+    case 'pc':
+      return PIXELS_PER_INCH / 6
+  }
+  return 1
+}
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports) {
+
+module.exports = function parseUnit(str, out) {
+    if (!out)
+        out = [ 0, '' ]
+
+    str = String(str)
+    var num = parseFloat(str, 10)
+    out[0] = num
+    out[1] = str.match(/[\d.\-\+]*\s*(.*)/)[1] || ''
+    return out
+}
+
+/***/ }),
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
