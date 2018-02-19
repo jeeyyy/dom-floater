@@ -10,7 +10,13 @@ const createFloater = (config) => {
 
     const floater = new Floater(config);
     floater.show();
-    
+    if(config.enableMouseOutEvent) {
+        document
+            .getElementById(`createSlideOut`)
+            .addEventListener('mouseout', () => {
+                FloaterManager.destroy(floater);
+            });
+    }
     // JUST FOR TESTING
     setTimeout(() => {
         let closeButton = floater.getContentElementWithSelector('close-button');
@@ -73,9 +79,9 @@ document
         createFloater(config);
     });
 
-document
+    document
     .getElementById(`createSlideOut`)
-    .addEventListener('click', () => {
+    .addEventListener('mouseover', () => {
         const value = (document.getElementById('slideOutDiv') as HTMLInputElement).value;
         const slideOutTargetElement =
             value.length > 0
@@ -94,7 +100,8 @@ document
                 </button>
             </div>`,
             contentElementType: IFloater.ContentElementType.TEMPLATE,
-            slideOutTargetElement: slideOutTargetElement
+            slideOutTargetElement: slideOutTargetElement,
+            enableMouseOutEvent: true
         };
         createFloater(config);
     });
