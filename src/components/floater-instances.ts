@@ -38,16 +38,17 @@ export class FloaterInstances {
   }
 
   getInstancesOfType(instanceType: IFloater.Type): Array<Floater> {
-    const instances = Object.keys(this._instances);
-    let result = [];
-    Object.keys(this._instances).forEach((instanceGuid: string) => {
+    return Object.keys(this._instances).reduce((acc: any[], instanceGuid: string, cI: number, arr: any[]) => {
       const instance: Floater = this.getInstanceById(instanceGuid);
       if (instance && instance.getConfiguration().type === instanceType) {
-        result.push(instance);
+        acc.push(instance);
       }
+      return acc;
+    }, []).sort((prev: Floater, next: Floater) => {
+      return prev.getCreatedTimeStamp() - next.getCreatedTimeStamp()
     });
-    return result;
   }
+
 }
 
 export const floaterInstances = new FloaterInstances();

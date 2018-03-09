@@ -351,6 +351,7 @@ export default class Floater implements IFloater.Component {
   constructor(private configuration: IFloater.Configuration) {
     // extend config object with guid
     configuration.guid = nanoId();
+    configuration.createdAtUnixEpoch = Date.now();
 
     // create DOM
     this._hostElement = document.createElement("ARTICLE");
@@ -509,6 +510,10 @@ export default class Floater implements IFloater.Component {
 
   getGuid(): string {
     return this.configuration.guid;
+  }
+
+  getCreatedTimeStamp(): number {
+    return this.configuration.createdTimeStamp;
   }
 
   getContentElementWithSelector(selector: string): Element {
