@@ -711,12 +711,12 @@ if(false) {
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
+exports = module.exports = __webpack_require__(0)(false);
 // imports
 
 
 // module
-exports.push([module.i, "// Utility styles on attributes.\n[data-is-initialising=\"true\"] {\n   opacity: 0;\n }\n\n[data-is-destructing=\"true\"] {\n   opacity: 0;\n }", ""]);
+exports.push([module.i, "// Utility styles on attributes.\r\n[data-is-initialising=\"true\"] {\r\n   opacity: 0;\r\n }\r\n\r\n[data-is-destructing=\"true\"] {\r\n   opacity: 0;\r\n }", ""]);
 
 // exports
 
@@ -1290,12 +1290,12 @@ if(false) {
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
+exports = module.exports = __webpack_require__(0)(false);
 // imports
 
 
 // module
-exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\n  z-index: 1000;\n  box-sizing: border-box;  \n  background: transparent;\n}\n.dom-floater-base.MODAL {\n    position: fixed;\n    left: 50%;\n    top: 50%; \n    -webkit-transform: translateX(-50%) translateY(-50%); \n            transform: translateX(-50%) translateY(-50%);\n  }\n.dom-floater-base.MODAL.MASK {      \n    }\n.dom-floater-base.TOAST {\n    position: relative;\n\n  }\n.dom-floater-base.POPUP {\n    position: fixed;\n  }\n.dom-floater-base.POPUP >nav.popup-mask {\n      top: 0;\n      right: 0;\n      bottom: 0;\n      left: 0;\n      position: fixed;\n      z-index: -1;\n      background: rgb(0, 0, 0);\n      opacity: 0.3;\n    }\n.dom-floater-base.POPUP[data-popup-position=\"righTop\"] {\n    }\n.dom-floater-base.POPUP[data-popup-position=\"rightBottom\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topLeft\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topRight\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftTop\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftBottom\"] {\n\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomLeft\"] {\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomRight\"] {\n\n    }", ""]);
+exports.push([module.i, "/*\nbased on https://github.com/cssrecipes/custom-media-queries/blob/master/index.css\n */\n.dom-floater-base {\r\n  z-index: 1000;\r\n  box-sizing: border-box;  \r\n  background: transparent;\r\n}\n.dom-floater-base.MODAL {\r\n    position: fixed;\r\n    left: 50%;\r\n    top: 50%; \r\n    transform: translateX(-50%) translateY(-50%);\r\n  }\n.dom-floater-base.MODAL.MASK {      \r\n    }\n.dom-floater-base.TOAST {\r\n    position: relative;\r\n\r\n  }\n.dom-floater-base.POPUP {\r\n    position: fixed;\r\n  }\n.dom-floater-base.POPUP >nav.popup-mask {\r\n      top: 0;\r\n      right: 0;\r\n      bottom: 0;\r\n      left: 0;\r\n      position: fixed;\r\n      z-index: -1;\r\n      background: rgb(0, 0, 0);\r\n      opacity: 0.3;\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"righTop\"] {\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"rightBottom\"] {\r\n\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topLeft\"] {\r\n\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"topRight\"] {\r\n\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftTop\"] {\r\n\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"leftBottom\"] {\r\n\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomLeft\"] {\r\n    }\n.dom-floater-base.POPUP[data-popup-position=\"bottomRight\"] {\r\n\r\n    }", ""]);
 
 // exports
 
@@ -1433,12 +1433,12 @@ if(false) {
 /* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
+exports = module.exports = __webpack_require__(0)(false);
 // imports
 
 
 // module
-exports.push([module.i, ".dom-masker-base {\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  position: fixed;\n  z-index: 999;\n  background: rgb(0, 0, 0);\n  opacity: 0.3;\n}", ""]);
+exports.push([module.i, ".dom-masker-base {\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  position: fixed;\r\n  z-index: 999;\r\n  background: rgb(0, 0, 0);\r\n  opacity: 0.3;\r\n}", ""]);
 
 // exports
 
@@ -1536,12 +1536,12 @@ if(false) {
 /* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
+exports = module.exports = __webpack_require__(0)(false);
 // imports
 
 
 // module
-exports.push([module.i, ".dom-toaster-container-base {\n  position: fixed;\n  top: 0rem;\n  left: 50%;\n  -webkit-transform: translateX(-50%) translateY(0);\n          transform: translateX(-50%) translateY(0);\n  z-index: 1001;\n}", ""]);
+exports.push([module.i, ".dom-toaster-container-base {\r\n  position: fixed;\r\n  top: 0rem;\r\n  left: 50%;\r\n  transform: translateX(-50%) translateY(0);\r\n  z-index: 1001;\r\n}", ""]);
 
 // exports
 
@@ -1637,7 +1637,7 @@ module.exports = function (size) {
 /* 20 */
 /***/ (function(module, exports) {
 
-var crypto = window.crypto || window.msCrypto
+var crypto = self.crypto || self.msCrypto
 
 module.exports = function (bytes) {
   return crypto.getRandomValues(new Uint8Array(bytes))

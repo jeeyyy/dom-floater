@@ -18,6 +18,10 @@ export class ToasterContainer {
     this._hostElement.appendChild(toastElement);
   }
 
+  hasChild() {
+    return !!this._hostElement.childElementCount;
+  }
+
   destroy() {
     this._hostElement.dataset["isDestructing"] = "true";
     requestAnimationFrame(() => {

@@ -1,7 +1,7 @@
 // import * as DomFloater from '../dist/dom-floater.js';
 import * as dF from '../src/index';
 // import * as dF from '../dist/dom-floater';
-import { IFloater } from '../src/interfaces';
+import {IFloater} from '../src/interfaces';
 
 const Floater = dF.DomFloater.default;
 const FloaterManager = dF.DomFloaterManager;
@@ -10,7 +10,7 @@ const createFloater = (config) => {
 
     const floater = new Floater(config);
     floater.show();
-    if(config.enableMouseOutEvent) {
+    if (config.enableMouseOutEvent) {
         document
             .getElementById(`createSlideOut`)
             .addEventListener('mouseout', () => {
@@ -79,7 +79,7 @@ document
         createFloater(config);
     });
 
-    document
+document
     .getElementById(`createSlideOut`)
     .addEventListener('mouseover', () => {
         const value = (document.getElementById('slideOutDiv') as HTMLInputElement).value;

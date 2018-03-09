@@ -11,6 +11,7 @@ import {
   getStyleToShowFloater,
   getStyleToHideFloater
 } from "../util";
+import { escape } from "querystring";
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -165,6 +166,9 @@ export default class Floater implements IFloater.Component {
       if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
         toasterContainer.init();
       }
+
+      if (toasterContainer.hasChild()) return;
+
       toasterContainer.add(this._hostElement);
       // if has expiry - start destruction timer
       if (this.configuration.expiry) {
@@ -405,9 +409,14 @@ export default class Floater implements IFloater.Component {
           );
         }
         case IFloater.Type.TOAST: {
+          // if (!(toasterContainer && toasterContainer.hasChild())) {
+          // if (!floaterInstances.getQueuedToast()) {
           return this.HELPER_FUNCTIONS.handleShowToast(
             getCurrentInstanceOfType
           );
+          // }
+          // }
+          // return;
         }
         case IFloater.Type.POPUP: {
           return this.HELPER_FUNCTIONS.handleShowPopup(
