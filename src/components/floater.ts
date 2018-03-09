@@ -167,9 +167,6 @@ export default class Floater implements IFloater.Component {
         toasterContainer.init();
       }
 
-      // TODO: remove
-      // if (toasterContainer.hasChild()) return;
-
       toasterContainer.add(this._hostElement);
       // if has expiry - start destruction timer
       if (this.configuration.expiry) {
@@ -398,42 +395,40 @@ export default class Floater implements IFloater.Component {
     floaterInstances.add(this);
   }
 
-  showToast(toast: Floater) {
-    this.HELPER_FUNCTIONS.handleShowToast([toast]);
+  showNextToast(floaters: Floater[]) {
+    this.HELPER_FUNCTIONS.handleShowToast(floaters);
   }
 
   show(): Promise<void> | void {
     if (this.configuration.type) {
-      if (this.configuration.type === IFloater.Type.TOAST) {
-        if (!floaterInstances.isQueueInitiated()) {
-          const floater = floaterInstances.initFloaterQueue();
-          this.showToast(floater);
+      const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
+        this.configuration.type
+      );
+
+      switch (this.configuration.type) {
+        case IFloater.Type.MODAL: {
+          return this.HELPER_FUNCTIONS.handleShowModal(
+            getCurrentInstanceOfType
+          );
         }
-      } else {
-        const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
-          this.configuration.type
-        );
-        switch (this.configuration.type) {
-          case IFloater.Type.MODAL: {
-            return this.HELPER_FUNCTIONS.handleShowModal(
+        case IFloater.Type.TOAST: {
+          if (!floaterInstances.isToastInitiated()) {
+            floaterInstances.initiateToast();
+            return this.HELPER_FUNCTIONS.handleShowToast(
               getCurrentInstanceOfType
             );
           }
-          // case IFloater.Type.TOAST: {
-          //   return this.HELPER_FUNCTIONS.handleShowToast(
-          //     getCurrentInstanceOfType
-          //   );
-          // }
-          case IFloater.Type.POPUP: {
-            return this.HELPER_FUNCTIONS.handleShowPopup(
-              getCurrentInstanceOfType
-            );
-          }
-          case IFloater.Type.SLIDEOUT: {
-            return this.HELPER_FUNCTIONS.handleShowSlideOut(
-              getCurrentInstanceOfType
-            );
-          }
+          return;
+        }
+        case IFloater.Type.POPUP: {
+          return this.HELPER_FUNCTIONS.handleShowPopup(
+            getCurrentInstanceOfType
+          );
+        }
+        case IFloater.Type.SLIDEOUT: {
+          return this.HELPER_FUNCTIONS.handleShowSlideOut(
+            getCurrentInstanceOfType
+          );
         }
       }
     } else {
