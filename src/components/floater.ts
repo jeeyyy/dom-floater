@@ -41,13 +41,13 @@ export default class Floater implements IFloater.Component {
         case IFloater.Type.TOAST:
           return `${baseClass} ${
             config.toastPosition ? config.toastPosition : ""
-          }`;
+            }`;
         case IFloater.Type.POPUP:
           return `${baseClass}`;
         case IFloater.Type.SLIDEOUT:
           return `${baseClass} ${
             config.slideOutPosition ? config.slideOutPosition : ""
-          } ${config.slideOutMask ? config.slideOutMask : "MASK"}`;
+            } ${config.slideOutMask ? config.slideOutMask : "MASK"}`;
       }
     },
     getFloaterParentWithSelector: (
@@ -167,7 +167,8 @@ export default class Floater implements IFloater.Component {
         toasterContainer.init();
       }
 
-      if (toasterContainer.hasChild()) return;
+      // TODO: remove
+      // if (toasterContainer.hasChild()) return;
 
       toasterContainer.add(this._hostElement);
       // if has expiry - start destruction timer
@@ -397,36 +398,42 @@ export default class Floater implements IFloater.Component {
     floaterInstances.add(this);
   }
 
+  showToast(toast: Floater) {
+    this.HELPER_FUNCTIONS.handleShowToast([toast]);
+  }
+
   show(): Promise<void> | void {
-    const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
-      this.configuration.type
-    );
     if (this.configuration.type) {
-      switch (this.configuration.type) {
-        case IFloater.Type.MODAL: {
-          return this.HELPER_FUNCTIONS.handleShowModal(
-            getCurrentInstanceOfType
-          );
+      if (this.configuration.type === IFloater.Type.TOAST) {
+        if (!floaterInstances.isQueueInitiated()) {
+          const floater = floaterInstances.initFloaterQueue();
+          this.showToast(floater);
         }
-        case IFloater.Type.TOAST: {
-          // if (!(toasterContainer && toasterContainer.hasChild())) {
-          // if (!floaterInstances.getQueuedToast()) {
-          return this.HELPER_FUNCTIONS.handleShowToast(
-            getCurrentInstanceOfType
-          );
+      } else {
+        const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
+          this.configuration.type
+        );
+        switch (this.configuration.type) {
+          case IFloater.Type.MODAL: {
+            return this.HELPER_FUNCTIONS.handleShowModal(
+              getCurrentInstanceOfType
+            );
+          }
+          // case IFloater.Type.TOAST: {
+          //   return this.HELPER_FUNCTIONS.handleShowToast(
+          //     getCurrentInstanceOfType
+          //   );
           // }
-          // }
-          // return;
-        }
-        case IFloater.Type.POPUP: {
-          return this.HELPER_FUNCTIONS.handleShowPopup(
-            getCurrentInstanceOfType
-          );
-        }
-        case IFloater.Type.SLIDEOUT: {
-          return this.HELPER_FUNCTIONS.handleShowSlideOut(
-            getCurrentInstanceOfType
-          );
+          case IFloater.Type.POPUP: {
+            return this.HELPER_FUNCTIONS.handleShowPopup(
+              getCurrentInstanceOfType
+            );
+          }
+          case IFloater.Type.SLIDEOUT: {
+            return this.HELPER_FUNCTIONS.handleShowSlideOut(
+              getCurrentInstanceOfType
+            );
+          }
         }
       }
     } else {
@@ -449,7 +456,7 @@ export default class Floater implements IFloater.Component {
             !this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.IS_LAST_CHILD
               ? this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF
               : this._dynamicRefs.CONTENT_ELEMENT_WHEN_NODE_PROPS.SIBLING_REF
-                  .nextSibling
+                .nextSibling
           );
         }
       }
