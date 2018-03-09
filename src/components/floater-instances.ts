@@ -26,11 +26,6 @@ export class FloaterInstances {
       if (this._toastQueue.length) {
         this._toastQueue.pop().show();
       }
-      // this._queuedToast = this.getQueuedToast();
-      // if (this._queuedToast) {
-      //   this._queuedToast.show();
-      //   console.log("_toastQueue length: " + this._toastQueue.length);
-      // }
     }
   }
 
