@@ -47,7 +47,7 @@ export namespace IFloater {
     slideOutMask?: boolean;
     // INTERNAL PROPS
     guid?: string;
-    createdTimeStamp: number;
+    createdTimeStamp?: number;
     enableMouseOutEvent?: boolean;
   }
 
