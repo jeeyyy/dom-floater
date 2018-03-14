@@ -33,7 +33,7 @@ export default class Floater implements IFloater.Component {
     }
   };
 
-  private observer = new MutationObserver(
+  private toasterContainerObserver = new MutationObserver(
     this.toasterContainerMutationCallback
   );
   private config = { childList: true };
@@ -47,13 +47,13 @@ export default class Floater implements IFloater.Component {
         case IFloater.Type.TOAST:
           return `${baseClass} ${
             config.toastPosition ? config.toastPosition : ""
-            }`;
+          }`;
         case IFloater.Type.POPUP:
           return `${baseClass}`;
         case IFloater.Type.SLIDEOUT:
           return `${baseClass} ${
             config.slideOutPosition ? config.slideOutPosition : ""
-            } ${config.slideOutMask ? config.slideOutMask : "MASK"}`;
+          } ${config.slideOutMask ? config.slideOutMask : "MASK"}`;
       }
     },
     getFloaterParentWithSelector: (
@@ -97,12 +97,6 @@ export default class Floater implements IFloater.Component {
     handlerForDestructOnPopupMaskClick: (event: MouseEvent) => {
       this.destroy();
     },
-
-    // TODO: ??
-    handlerForDestructOnDismissAllClick: (event: MouseEvent) => {
-      this.destroy();
-    },
-
     destructOnPopupMask: (registerEvent: boolean) => {
       if (registerEvent) {
         this._dynamicRefs.POPUP_PROPS.POPUP_MASK_WHEEL_LISTENER = require("mouse-wheel")(
@@ -161,21 +155,6 @@ export default class Floater implements IFloater.Component {
       }
     },
 
-    // TODO: ??
-    destructOnDismissAllClick: (registerEvent: boolean) => {
-      if (registerEvent) {
-        document.addEventListener(
-          "click",
-          this.HELPER_FUNCTIONS.handlerForDestructOnDismissAllClick
-        );
-      } else {
-        document.removeEventListener(
-          "click",
-          this.HELPER_FUNCTIONS.handlerForDestructOnDismissAllClick
-        );
-      }
-    },
-
     handleShowModal: (getCurrentInstanceOfType: Floater[]) => {
       // only init a mask element if this is the first modal that is shown
       if (
@@ -191,15 +170,18 @@ export default class Floater implements IFloater.Component {
     },
     handleShowToast: (getCurrentInstanceOfType: Floater[]) => {
       // only init a toast container element if does not exist
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+      if (
+        getCurrentInstanceOfType &&
+        getCurrentInstanceOfType.length <= 1 &&
+        !toasterContainer.getHostElement()
+      ) {
         toasterContainer.init();
-
         // Start observing the target node for configured mutations
-        this.observer.observe(toasterContainer.getHostElement(), this.config);
+        this.toasterContainerObserver.observe(
+          toasterContainer.getHostElement(),
+          this.config
+        );
       }
-      // TODO:
-      // Later, you can stop observing
-      // observer.disconnect();
 
       toasterContainer.add(this._hostElement);
       // if has expiry - start destruction timer
@@ -437,9 +419,7 @@ export default class Floater implements IFloater.Component {
       if (mutation.type === `childList` && mutation.addedNodes.length) {
         const target = mutation.target;
         const dismissAll = target.querySelector(`.dismiss-all`);
-        // console.log(dismissAll);
         const toasts = floaterInstances.getInstancesOfType(IFloater.Type.TOAST);
-        // console.log(`toatal taosts: ${toasts.length}`);
         if (dismissAll && toasts.length > 1) {
           const count = dismissAll.querySelector(`.count`);
           if (count) count.innerHTML = toasts.length;
@@ -521,6 +501,18 @@ export default class Floater implements IFloater.Component {
         }
         break;
       case IFloater.Type.TOAST:
+        // This getting called 2nd time from floaterInstance destroy call
+        // toaster container clean up
+        const queuedToasts = floaterInstances.getInstancesOfType(
+          IFloater.Type.TOAST
+        );
+        if (queuedToasts.length <= 1 && toasterContainer.getHostElement()) {
+          toasterContainer.destroy();
+          // mutation toasterContainerObserver disconnect
+          if (this.toasterContainerObserver) {
+            this.toasterContainerObserver.disconnect();
+          }
+        }
         break;
       case IFloater.Type.POPUP:
         this.HELPER_FUNCTIONS.destructOnEscape(false);
@@ -551,8 +543,6 @@ export default class Floater implements IFloater.Component {
         // remove from DOM
         if (this._hostElement.parentElement) {
           this._hostElement.parentElement.removeChild(this._hostElement);
-          // TODO: not correct, why ?
-          // if (this.observer) this.observer.disconnect();
         }
         resolve();
       });
