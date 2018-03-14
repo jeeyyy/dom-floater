@@ -18,10 +18,19 @@ export class ToasterContainer {
     this._hostElement.appendChild(toastElement);
   }
 
+  getHostElement() {
+    return this._hostElement;
+  }
+
   destroy() {
     this._hostElement.dataset["isDestructing"] = "true";
     requestAnimationFrame(() => {
-      this._hostElement.parentElement.removeChild(this._hostElement);
+      if (this._hostElement && this._hostElement.parentElement) {
+        this._hostElement.parentElement.removeChild(this._hostElement);
+        this._hostElement = undefined;
+        return;
+      }
+      this._hostElement = undefined;
     });
   }
 }

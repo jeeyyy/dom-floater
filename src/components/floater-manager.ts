@@ -7,8 +7,12 @@ export class FloaterManager {
     return floaterInstances.getInstanceById(guid);
   }
 
-  destroy(instance) {
-    floaterInstances.destroy(instance);
+  destroy(instance, destroyAll?, instanceType?) {
+    if (destroyAll) {
+      floaterInstances.destroyAll(instanceType);
+    } else {
+      floaterInstances.destroy(instance);
+    }
   }
 }
 

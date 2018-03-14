@@ -11,6 +11,7 @@ import {
   getStyleToShowFloater,
   getStyleToHideFloater
 } from "../util";
+import { escape } from "querystring";
 
 /**
  * A floating element that takes any content and intelligently positions as per configuration or to a given target.
@@ -31,6 +32,12 @@ export default class Floater implements IFloater.Component {
       POPUP_MASK_WHEEL_CLICK_LISTENER: null
     }
   };
+
+  private toasterContainerObserver = new MutationObserver(
+    this.toasterContainerMutationCallback
+  );
+  private config = { childList: true };
+
   private HELPER_FUNCTIONS = {
     getClassName: (config: IFloater.Configuration) => {
       let baseClass = `dom-floater-base ${config.type}`;
@@ -147,6 +154,7 @@ export default class Floater implements IFloater.Component {
         );
       }
     },
+
     handleShowModal: (getCurrentInstanceOfType: Floater[]) => {
       // only init a mask element if this is the first modal that is shown
       if (
@@ -162,14 +170,25 @@ export default class Floater implements IFloater.Component {
     },
     handleShowToast: (getCurrentInstanceOfType: Floater[]) => {
       // only init a toast container element if does not exist
-      if (getCurrentInstanceOfType && getCurrentInstanceOfType.length <= 1) {
+      if (
+        getCurrentInstanceOfType &&
+        getCurrentInstanceOfType.length <= 1 &&
+        !toasterContainer.getHostElement()
+      ) {
         toasterContainer.init();
+        // Start observing the target node for configured mutations
+        this.toasterContainerObserver.observe(
+          toasterContainer.getHostElement(),
+          this.config
+        );
       }
+
       toasterContainer.add(this._hostElement);
       // if has expiry - start destruction timer
       if (this.configuration.expiry) {
         this.HELPER_FUNCTIONS.destructOnExpiry(this.configuration.expiry)();
       }
+
       this.HELPER_FUNCTIONS.handleShow();
     },
     handleShowPopup: (getCurrentInstanceOfType: Floater[]) => {
@@ -349,6 +368,7 @@ export default class Floater implements IFloater.Component {
   constructor(private configuration: IFloater.Configuration) {
     // extend config object with guid
     configuration.guid = nanoId();
+    configuration.createdTimeStamp = Date.now();
 
     // create DOM
     this._hostElement = document.createElement("ARTICLE");
@@ -393,11 +413,33 @@ export default class Floater implements IFloater.Component {
     floaterInstances.add(this);
   }
 
+  // Callback function to execute when mutations are observed
+  toasterContainerMutationCallback(mutationsList) {
+    for (let mutation of mutationsList) {
+      if (mutation.type === `childList` && mutation.addedNodes.length) {
+        const target = mutation.target;
+        const dismissAll = target.querySelector(`.dismiss-all`);
+        const toasts = floaterInstances.getInstancesOfType(IFloater.Type.TOAST);
+        if (dismissAll && toasts.length > 1) {
+          const count = dismissAll.querySelector(`.count`);
+          if (count) count.innerHTML = toasts.length;
+
+          dismissAll.classList.remove("hidden");
+        }
+      }
+    }
+  }
+
+  showNextToast(floaters: Floater[]) {
+    this.HELPER_FUNCTIONS.handleShowToast(floaters);
+  }
+
   show(): Promise<void> | void {
-    const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
-      this.configuration.type
-    );
     if (this.configuration.type) {
+      const getCurrentInstanceOfType = floaterInstances.getInstancesOfType(
+        this.configuration.type
+      );
+
       switch (this.configuration.type) {
         case IFloater.Type.MODAL: {
           return this.HELPER_FUNCTIONS.handleShowModal(
@@ -405,9 +447,12 @@ export default class Floater implements IFloater.Component {
           );
         }
         case IFloater.Type.TOAST: {
-          return this.HELPER_FUNCTIONS.handleShowToast(
-            getCurrentInstanceOfType
-          );
+          if (getCurrentInstanceOfType.length <= 1) {
+            return this.HELPER_FUNCTIONS.handleShowToast(
+              getCurrentInstanceOfType
+            );
+          }
+          return;
         }
         case IFloater.Type.POPUP: {
           return this.HELPER_FUNCTIONS.handleShowPopup(
@@ -456,6 +501,18 @@ export default class Floater implements IFloater.Component {
         }
         break;
       case IFloater.Type.TOAST:
+        // This getting called 2nd time from floaterInstance destroy call
+        // toaster container clean up
+        const queuedToasts = floaterInstances.getInstancesOfType(
+          IFloater.Type.TOAST
+        );
+        if (queuedToasts.length <= 1 && toasterContainer.getHostElement()) {
+          toasterContainer.destroy();
+          // mutation toasterContainerObserver disconnect
+          if (this.toasterContainerObserver) {
+            this.toasterContainerObserver.disconnect();
+          }
+        }
         break;
       case IFloater.Type.POPUP:
         this.HELPER_FUNCTIONS.destructOnEscape(false);
@@ -498,6 +555,10 @@ export default class Floater implements IFloater.Component {
 
   getGuid(): string {
     return this.configuration.guid;
+  }
+
+  getCreatedTimeStamp(): number {
+    return this.configuration.createdTimeStamp;
   }
 
   getContentElementWithSelector(selector: string): Element {
