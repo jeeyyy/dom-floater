@@ -83,7 +83,7 @@ document
                 </button>
             </div>`,
             contentElementType: IFloater.ContentElementType.TEMPLATE,
-            expiry: 1000
+            expiry: 4000
         };
         createFloater(config);
     });
